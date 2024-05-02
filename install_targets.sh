@@ -1,0 +1,11 @@
+INSTALL_TARGETS=(
+    ".config"
+    ".ssh"
+    ".editorconfig"
+    ".gitconfig"
+    ".profile"
+    ".zprofile"
+    ".zshenv"
+    ".zshrc"
+    "Brewfile"
+)

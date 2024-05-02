@@ -1,2 +1,5 @@
 [tools]
-node = "20"
+node = "latest"
+python = "3.11"
+go = "1.21"
+deno = "latest"
