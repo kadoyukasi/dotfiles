@@ -1,0 +1,32 @@
+[user]
+  name = kadoyukasi
+  email = 63542479+kadoyukasi@users.noreply.github.com
+  signingkey = /Users/kyasu/.ssh/id_git_sign
+[core]
+  excludesfile = ~/.gitignore
+  autoCRLF = false
+  editor = vim -c 'set fileencoding=utf-8'
+  filemode = false
+  quotepath = false
+  ignorecase = false
+[push]
+  default = simple
+[alias]
+  st = status
+  ft = fetch
+  rb = rebase
+  rs = reset
+  ad = add
+  cm = commit
+  co = checkout
+  br = branch
+  cp = cherry-pick
+  l = log --one-line
+  lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative
+  lga = log --graph --all --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative
+[pull]
+  rebase = preserve
+[merge]
+  ff = false
+[gpg]
+  format = ssh
