@@ -20,8 +20,8 @@ setopt SHARE_HISTORY
 stty -ixon
 
 bindkey -e
-bindkey '^P' history-incremental-pattern-search-backward
-bindkey '^N' history-incremental-pattern-search-forward
+bindkey '^P' history-substring-search-up
+bindkey '^N' history-substring-search-down
 bindkey "^[[3~" delete-char
 bindkey "^[[1~" beginning-of-line
 bindkey "^[[4~" end-of-line
