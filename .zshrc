@@ -20,13 +20,19 @@ setopt SHARE_HISTORY
 stty -ixon
 
 bindkey -e
-bindkey '^R' history-incremental-search-backward
-bindkey '^S' history-incremental-search-forward
-bindkey '^P' history-beginning-search-backward
-bindkey '^N' history-beginning-search-forward
+bindkey '^P' history-incremental-pattern-search-backward
+bindkey '^N' history-incremental-pattern-search-forward
 bindkey "^[[3~" delete-char
 bindkey "^[[1~" beginning-of-line
 bindkey "^[[4~" end-of-line
+
+autoload -Uz compinit
+compinit
+
+zstyle ':completion:*' completer _complete _history
+zstyle ':completion:*' menu select=1
+zstyle ':completion:*:history-words' stop yes
+zstyle ':completion:*:history-words' remove-all-dups yes
 
 eval "$(sheldon source)"
 eval "$(mise activate zsh)"
