@@ -1,6 +1,7 @@
 INSTALL_TARGETS=(
     ".config"
     ".ssh"
+    ".zsh"
     ".editorconfig"
     ".gitconfig"
     ".profile"
@@ -8,4 +9,5 @@ INSTALL_TARGETS=(
     ".zshenv"
     ".zshrc"
     "Brewfile"
+    "Brewfile.lock.json"
 )
