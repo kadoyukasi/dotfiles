@@ -38,3 +38,11 @@ eval "$(sheldon source)"
 eval "$(mise activate zsh)"
 source "$HOME/.cargo/env"
 source $HOME/.wasmedge/env
+
+# pnpm
+export PNPM_HOME="/Users/kyasu/Library/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME:"*) ;;
+  *) export PATH="$PNPM_HOME:$PATH" ;;
+esac
+# pnpm end
