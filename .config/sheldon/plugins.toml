@@ -55,6 +55,12 @@ apply = ["defer"]
 github = "zsh-users/zsh-completions"
 apply = ["defer"]
 
-[plugins.zsh-custom]
-local = "~/.zsh"
+[plugins.compinit]
+inline = "autoload -Uz {{ name }} && zsh-defer {{ name }}"
+
+[plugins.promptinit]
+inline = "autoload -Uz {{ name }} && zsh-defer {{ name }}"
+
+[plugins.alias]
+local = "~/.zsh/alias"
 apply = ["defer"]

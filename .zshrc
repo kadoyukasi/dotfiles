@@ -1,6 +1,8 @@
 HISTFILE=~/.zsh_history
 HISTSIZE=10000
 SAVEHIST=10000
+
+# https://zsh.sourceforge.io/Doc/Release/Options.html
 setopt AUTO_PARAM_SLASH
 setopt CORRECT
 setopt EXTENDED_GLOB
@@ -25,9 +27,8 @@ bindkey '^N' history-substring-search-down
 bindkey "^[[3~" delete-char
 bindkey "^[[1~" beginning-of-line
 bindkey "^[[4~" end-of-line
-
-autoload -Uz compinit
-compinit
+bindkey '^[[1;9C' forward-word
+bindkey '^[[1;9D' backward-word
 
 zstyle ':completion:*' completer _complete _history
 zstyle ':completion:*' menu select=1
@@ -46,3 +47,11 @@ case ":$PATH:" in
   *) export PATH="$PNPM_HOME:$PATH" ;;
 esac
 # pnpm end
+
+# pure prompt with clover
+export PURE_PROMPT_SYMBOL='🍀'
+
+# cache zshrc
+if [ ! -e $HOME/.zshrc.zwc -o $HOME/.zshrc -nt $HOME/.zshrc.zwc ]; then
+  zcompile $HOME/.zshrc
+fi

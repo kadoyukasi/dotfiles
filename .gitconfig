@@ -13,7 +13,6 @@
   default = simple
 [alias]
   st = status
-  ft = fetch
   rb = rebase
   rs = reset
   ad = add
