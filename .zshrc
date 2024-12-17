@@ -27,8 +27,8 @@ bindkey '^N' history-substring-search-down
 bindkey "^[[3~" delete-char
 bindkey "^[[1~" beginning-of-line
 bindkey "^[[4~" end-of-line
-bindkey '^[[1;9C' forward-word
-bindkey '^[[1;9D' backward-word
+bindkey '^[f' forward-word
+bindkey '^[b' backward-word
 
 zstyle ':completion:*' completer _complete _history
 zstyle ':completion:*' menu select=1
