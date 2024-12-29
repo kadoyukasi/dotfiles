@@ -27,8 +27,6 @@ bindkey '^N' history-substring-search-down
 bindkey "^[[3~" delete-char
 bindkey "^[[1~" beginning-of-line
 bindkey "^[[4~" end-of-line
-bindkey '^[f' forward-word
-bindkey '^[b' backward-word
 
 zstyle ':completion:*' completer _complete _history
 zstyle ':completion:*' menu select=1
@@ -39,6 +37,7 @@ eval "$(sheldon source)"
 eval "$(mise activate zsh)"
 source "$HOME/.cargo/env"
 source $HOME/.wasmedge/env
+source "$HOME/.rye/env"
 
 # pnpm
 export PNPM_HOME="/Users/kyasu/Library/pnpm"
