@@ -1,3 +1,4 @@
+# expect olets/zsh-abbr
 alias git-cleanup-branches='
   git fetch --prune
   remote_branches=$(git branch -r | awk "{print \$1}" | sed "s|origin/||")

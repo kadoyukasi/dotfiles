@@ -1,0 +1,4 @@
+abbr "grep"="ggrep --color=auto"
+abbr "la"="gls -la --color=auto --show-control-chars"
+abbr "ll"="gls -l --color=auto --show-control-chars"
+abbr "ls"="gls --color=auto --show-control-chars"

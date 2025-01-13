@@ -55,6 +55,10 @@ apply = ["defer"]
 github = "zsh-users/zsh-completions"
 apply = ["defer"]
 
+[plugins.abbr]
+github = "olets/zsh-abbr"
+apply = ["defer"]
+
 [plugins.compinit]
 inline = "autoload -Uz {{ name }} && zsh-defer {{ name }}"
 

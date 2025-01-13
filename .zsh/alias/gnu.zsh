@@ -1,4 +1,4 @@
-alias ls='gls --color=auto --show-control-chars'
-alias ll='gls -l --color=auto --show-control-chars'
-alias la='gls -la --color=auto --show-control-chars'
-alias grep='ggrep --color=auto'
+abbr ls='gls --color=auto --show-control-chars'
+abbr ll='gls -l --color=auto --show-control-chars'
+abbr la='gls -la --color=auto --show-control-chars'
+abbr grep='ggrep --color=auto'
