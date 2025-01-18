@@ -8,7 +8,7 @@
   editor = vim -c 'set fileencoding=utf-8'
   filemode = false
   quotepath = false
-	ignorecase = false
+  ignorecase = false
 [push]
   default = simple
 [alias]

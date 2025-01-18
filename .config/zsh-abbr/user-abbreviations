@@ -1,4 +1,16 @@
-abbr "grep"="ggrep --color=auto"
-abbr "la"="gls -la --color=auto --show-control-chars"
-abbr "ll"="gls -l --color=auto --show-control-chars"
-abbr "ls"="gls --color=auto --show-control-chars"
+@REM utility aliases
+abbr ll='ls -l'
+abbr la='ls -la'
+
+@REM abbr import-git-aliases -g --prefix "git "
+abbr -g "git ad"="git add"
+abbr -g "git br"="git branch"
+abbr -g "git cm"="git commit"
+abbr -g "git co"="git checkout"
+abbr -g "git cp"="git cherry-pick"
+abbr -g "git l"="git log --one-line"
+abbr -g "git lg"="git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative"
+abbr -g "git lga"="git log --graph --all --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative"
+abbr -g "git rb"="git rebase"
+abbr -g "git rs"="git reset"
+abbr -g "git st"="git status"
