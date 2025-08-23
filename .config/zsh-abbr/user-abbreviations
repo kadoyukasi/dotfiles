@@ -1,4 +1,6 @@
 @REM utility aliases
+abbr df='df -h'
+abbr du='du -h'
 abbr ll='ls -l'
 abbr la='ls -la'
 

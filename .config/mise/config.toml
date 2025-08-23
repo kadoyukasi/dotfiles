@@ -4,3 +4,6 @@ python = "latest"
 go = "latest"
 deno = "latest"
 java = "latest"
+
+[settings]
+idiomatic_version_file_enable_tools = ["node"]
