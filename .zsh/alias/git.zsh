@@ -19,20 +19,12 @@ alias git-cleanup-branches='
 
 git-vscode-diff() {
   local patch_file="/tmp/git-diff-$$.patch"
+  git diff "$@" > "$patch_file"
+  code "$patch_file"
+}
 
-  # Get git diff output and save to patch file
-  if ! git diff "$@" --no-color > "$patch_file"; then
-    echo "Error: git diff failed"
-    return 1
-  fi
-
-  # Check if there are any changes
-  if [[ ! -s "$patch_file" ]]; then
-    echo "No changes to display"
-    rm -f "$patch_file"
-    return 0
-  fi
-
-  # Open patch file in VS Code
+git-vscode-show() {
+  local patch_file="/tmp/git-show-$$.patch"
+  git show "$@" > "$patch_file"
   code "$patch_file"
 }
