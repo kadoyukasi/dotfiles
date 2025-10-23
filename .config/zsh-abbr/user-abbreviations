@@ -16,3 +16,5 @@ abbr -g "git lga"="git log --graph --all --pretty=format:'%Cred%h%Creset -%C(yel
 abbr -g "git rb"="git rebase"
 abbr -g "git rs"="git reset"
 abbr -g "git st"="git status"
+abbr -g "git di"="git-vscode-diff"
+abbr -g "git sh"="git-vscode-show"
