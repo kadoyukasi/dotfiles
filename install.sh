@@ -24,6 +24,12 @@ for item in "${INSTALL_TARGETS[@]}"; do
 done
 echo "Dotfiles have been linked to your home directory."
 
+# Enable machine-wide git hooks (applies to all repositories unless overridden)
+if git -C "$DOTFILES_DIR" rev-parse --git-dir >/dev/null 2>&1; then
+    git config --global core.hooksPath "$DOTFILES_DIR/.githooks"
+    echo "Global git hooks path has been set to $DOTFILES_DIR/.githooks."
+fi
+
 # Install Homebrew packages
 brew bundle --file="$DOTFILES_DIR/Brewfile"
 echo "Homebrew packages have been installed."

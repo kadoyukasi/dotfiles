@@ -19,3 +19,10 @@ for item in "${INSTALL_TARGETS[@]}"; do
     remove_link "$target"
 done
 echo "Dotfiles have been uninstalled."
+
+# Remove global hooksPath if it points to this repository
+CURRENT_HOOKS_PATH="$(git config --global --get core.hooksPath || true)"
+if [ "$CURRENT_HOOKS_PATH" = "$DOTFILES_DIR/.githooks" ]; then
+    git config --global --unset core.hooksPath
+    echo "Unset global git hooks path ($DOTFILES_DIR/.githooks)."
+fi

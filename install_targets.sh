@@ -1,5 +1,7 @@
 INSTALL_TARGETS=(
     ".config"
+    ".codex"
+    ".copilot"
     ".ssh"
     ".zsh"
     ".bc"

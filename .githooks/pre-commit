@@ -1,0 +1,75 @@
+#!/bin/bash
+
+set -euo pipefail
+
+# Scan staged content to prevent accidental secret commits.
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMRT)
+
+if [ -z "$STAGED_FILES" ]; then
+    echo "[secret-check] skipped: no staged files"
+    exit 0
+fi
+
+FILE_COUNT=$(echo "$STAGED_FILES" | wc -l | tr -d ' ')
+echo "[secret-check] scanning $FILE_COUNT staged file(s)..."
+
+SENSITIVE_PATH_PATTERNS=(
+    '(^|/)auth\.json$'
+    '(^|/)\.env(\.|$)'
+    '(^|/)id_(rsa|dsa|ecdsa|ed25519)$'
+    '\.pem$'
+    '\.key$'
+    '\.p12$'
+    '\.pfx$'
+    '\.sqlite([-.].*)?$'
+    '\.db([-.].*)?$'
+)
+
+SENSITIVE_CONTENT_PATTERNS=(
+    '-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----'
+    'AKIA[0-9A-Z]{16}'
+    'ghp_[A-Za-z0-9]{36}'
+    'github_pat_[A-Za-z0-9_]{82,}'
+    'xox[baprs]-[A-Za-z0-9-]{10,}'
+    'AIza[0-9A-Za-z\\-_]{35}'
+    'sk_live_[0-9A-Za-z]{20,}'
+    '(api[_-]?key|access[_-]?token|secret|password)\s*[:=]\s*["'"'"']?[A-Za-z0-9_./+\\=-]{12,}'
+)
+
+violations=0
+
+while IFS= read -r path; do
+    [ -z "$path" ] && continue
+
+    for pattern in "${SENSITIVE_PATH_PATTERNS[@]}"; do
+        if echo "$path" | grep -Eq -- "$pattern"; then
+            echo "[secret-check] blocked by filename/path pattern: $path"
+            violations=1
+            break
+        fi
+    done
+
+    # Read staged blob, not working tree file.
+    staged_content="$(git show ":$path" 2>/dev/null || true)"
+    [ -z "$staged_content" ] && continue
+
+    for pattern in "${SENSITIVE_CONTENT_PATTERNS[@]}"; do
+        if echo "$staged_content" | grep -E -i -n -- "$pattern" >/dev/null; then
+            echo "[secret-check] blocked by content pattern in: $path"
+            echo "$staged_content" | grep -E -i -n -- "$pattern" | head -n 3
+            violations=1
+        fi
+    done
+done <<< "$STAGED_FILES"
+
+if [ "$violations" -ne 0 ]; then
+    echo ""
+    echo "[secret-check] result: BLOCKED"
+    echo "Commit blocked: potential sensitive data detected in staged changes."
+    echo "Fix the files or unstage them, then commit again."
+    exit 1
+fi
+
+echo "[secret-check] result: PASS"
+
+exit 0

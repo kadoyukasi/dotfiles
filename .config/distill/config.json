@@ -1,0 +1,8 @@
+{
+  "provider": "local",
+  "localBackend": "auto",
+  "localConcurrency": 5,
+  "localHost": "127.0.0.1",
+  "localPort": 8009,
+  "timeoutMs": 90000
+}

@@ -1,0 +1,14 @@
+# Ignore everything by default (runtime/state/secrets/logs/cache)
+*
+
+# Track managed Codex dotfiles
+!.gitignore
+!AGENTS.md
+!config.toml
+
+# Track user-authored policy and custom skill
+!rules/
+!rules/default.rules
+!skills/
+!skills/distill/
+!skills/distill/SKILL.md

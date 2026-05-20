@@ -22,7 +22,6 @@ cask "android-platform-tools"
 cask "clipy"
 cask "iterm2"
 cask "visual-studio-code"
-mas "iMovie", id: 408981434
 mas "LINE", id: 539883307
 vscode "biomejs.biome"
 vscode "codezombiech.gitignore"
