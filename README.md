@@ -14,7 +14,33 @@ Package manager by platform:
 - macOS: Homebrew (`Brewfile`)
 - Windows: Scoop (`Scoopfile`)
 
-On Windows, Scoop is assumed to be already installed.
+## Windows prerequisites
+
+### 1. Install PowerShell 7
+
+```powershell
+winget install --id Microsoft.PowerShell --source winget
+```
+
+### 2. Install Scoop
+
+If Scoop is not installed, `install.ps1` will install it automatically. To install manually:
+
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
+```
+
+### 3. Run the install script
+
+Symbolic link creation requires elevated privileges. Open PowerShell **as Administrator** and run:
+
+```powershell
+cd F:\work\dotfiles
+pwsh -File .\install.ps1
+```
+
+> Note: Do not use `sudo` — Scoop's `sudo` uses `Start-Process -Verb RunAs`, which spawns a separate elevated window and swallows all output. Running directly from an Administrator session is the reliable approach.
 
 ## Codex settings
 

@@ -5,16 +5,26 @@
 bucket extras
 bucket versions
 
-# CLI tools
+# CLI tools (mirrors Brewfile)
 gh
 mise
 rustup
-tree
 gawk
 gpg
 imagemagick
+tesseract
+apktool
+coreutils
+sed
+# tree is built into Windows as tree.com
+
+# Shell / prompt (cross-platform)
+starship
+eza
+zoxide
 
 # Desktop/dev tools
-android-platform-tools
+adb
 scrcpy
 vscode
+windows-terminal

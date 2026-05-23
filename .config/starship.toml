@@ -1,0 +1,7 @@
+# Starship prompt configuration
+# Used on Windows (PowerShell) and optionally on macOS instead of pure
+# Mirrors the pure prompt with the 🍀 symbol set in .zshrc
+
+[character]
+success_symbol = "[🍀](bold)"
+error_symbol = "[🍀](bold red)"

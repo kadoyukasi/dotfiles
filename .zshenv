@@ -1,4 +1,6 @@
-eval "$(/opt/homebrew/bin/brew shellenv)"
+if [[ -f /opt/homebrew/bin/brew ]]; then
+	eval "$(/opt/homebrew/bin/brew shellenv)"
+fi
 
 export LESSCHARSET='utf-8'
 export LESS='-R'

@@ -1,6 +1,6 @@
 $ErrorActionPreference = "Stop"
 
-$DotfilesDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$DotfilesDir = $PSScriptRoot
 $IsWindowsHost = $env:OS -eq "Windows_NT"
 
 if (-not $IsWindowsHost) {
@@ -49,6 +49,9 @@ foreach ($Item in $InstallTargets) {
     $TargetPath = Join-Path $HOME $Item
     Remove-Link -Target $TargetPath
 }
+
+# Remove PowerShell profile symlink
+Remove-Link -Target $PROFILE
 
 Write-Host "Dotfiles have been uninstalled."
 
