@@ -9,6 +9,7 @@
   filemode = false
   quotepath = false
   ignorecase = false
+	hooksPath = /Users/kyasu/work/dotfiles/.githooks
 [push]
   default = simple
 [pull]
