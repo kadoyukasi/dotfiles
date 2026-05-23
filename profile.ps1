@@ -38,3 +38,17 @@ if (Get-Command zoxide -ErrorAction SilentlyContinue) {
 if (Get-Command starship -ErrorAction SilentlyContinue) {
     Invoke-Expression (&starship init powershell)
 }
+
+# git VS Code integration: mirrors git-vscode-show / git-vscode-diff in .zsh/alias/git.zsh
+# These are also available as `git sh` / `git di` via git aliases in .gitconfig
+function git-vscode-show {
+    $tmp = Join-Path $env:TEMP "git-show-$PID.patch"
+    git show @args > $tmp
+    code $tmp
+}
+
+function git-vscode-diff {
+    $tmp = Join-Path $env:TEMP "git-diff-$PID.patch"
+    git diff @args > $tmp
+    code $tmp
+}

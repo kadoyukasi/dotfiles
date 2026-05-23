@@ -19,5 +19,5 @@ enabled = true
 
 [mcp_servers.serena]
 startup_timeout_sec = 15
-command = "/Users/kyasu/.local/bin/serena"
-args = ["start-mcp-server", "--project-from-cwd", "--context=codex"]
+command = "uvx"
+args = ["serena", "start-mcp-server", "--project-from-cwd", "--context=codex"]

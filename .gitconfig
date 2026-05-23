@@ -17,3 +17,14 @@
   ff = false
 [gpg]
   format = ssh
+[alias]
+  ad = add
+  br = branch
+  cm = commit
+  co = checkout
+  cp = cherry-pick
+  l = log --oneline
+  lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative
+  lga = log --graph --all --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative
+  sh = "!f() { git show \"$@\" > /tmp/git-show.patch && code /tmp/git-show.patch; }; f"
+  di = "!f() { git diff \"$@\" > /tmp/git-diff.patch && code /tmp/git-diff.patch; }; f"
