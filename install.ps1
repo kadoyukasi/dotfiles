@@ -142,6 +142,76 @@ try {
 
     Write-Host "Scoop packages have been installed."
 
+    # Install distill CLI (@samuelfaj/distill via npm + build native binary from source if needed)
+    # Migration note: when @samuelfaj/distill-win32-x64 is published to npm,
+    #   simply re-run: npm install -g @samuelfaj/distill
+    #   npm will install the official platform package, overwriting the locally built binary.
+    $Npm = Get-Command npm -ErrorAction SilentlyContinue
+    if ($Npm) {
+        Write-Host "Installing @samuelfaj/distill..."
+        & npm install -g @samuelfaj/distill
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "Failed to install @samuelfaj/distill. Continuing."
+        }
+        else {
+            # Check if the native binary is available (win32-x64 may not be on npm yet)
+            $null = & distill --version 2>&1
+            if ($LASTEXITCODE -ne 0) {
+                Write-Host "Native binary @samuelfaj/distill-win32-x64 not found on npm. Building from source..."
+
+                $Bun = Get-Command bun -ErrorAction SilentlyContinue
+                if (-not $Bun) {
+                    Write-Host "Installing bun (required to build distill)..."
+                    Invoke-Scoop -Arguments @("install", "bun") -FailureMessage "Failed to install bun. Cannot build distill native binary."
+                    $Bun = Get-Command bun -ErrorAction SilentlyContinue
+                }
+
+                if ($Bun) {
+                    $TmpDir = Join-Path $env:TEMP "distill-build-$(Get-Random)"
+                    try {
+                        Write-Host "Cloning samuelfaj/distill..."
+                        & git clone --depth=1 https://github.com/samuelfaj/distill.git $TmpDir
+                        if ($LASTEXITCODE -ne 0) { throw "git clone failed" }
+
+                        Push-Location $TmpDir
+                        Write-Host "Installing dependencies..."
+                        & bun install
+                        if ($LASTEXITCODE -ne 0) { throw "bun install failed" }
+
+                        Write-Host "Compiling distill.exe for win32-x64..."
+                        & bun run build:bins
+                        if ($LASTEXITCODE -ne 0) { throw "bun run build:bins failed" }
+
+                        # Place the binary where bin/distill.js expects @samuelfaj/distill-win32-x64
+                        $NpmRoot = (& npm root -g).Trim()
+                        $BinDest = Join-Path $NpmRoot "@samuelfaj\distill-win32-x64\bin"
+                        New-Item -ItemType Directory -Force -Path $BinDest | Out-Null
+                        Copy-Item (Join-Path $TmpDir ".dist\bun-windows-x64\distill.exe") -Destination $BinDest -Force
+                        Write-Host "distill.exe installed to $BinDest"
+                        Write-Host "@samuelfaj/distill ready. Run 'distill' to complete onboarding."
+                        Write-Host "Migration: when @samuelfaj/distill-win32-x64 is on npm, run: npm install -g @samuelfaj/distill"
+                    }
+                    catch {
+                        Write-Host "Failed to build distill from source: $_. Continuing."
+                    }
+                    finally {
+                        Pop-Location
+                        Remove-Item -Recurse -Force $TmpDir -ErrorAction SilentlyContinue
+                    }
+                }
+                else {
+                    Write-Host "bun not available. Cannot build distill native binary. Continuing."
+                }
+            }
+            else {
+                Write-Host "@samuelfaj/distill installed. Run 'distill' to complete onboarding."
+            }
+        }
+    }
+    else {
+        Write-Host "npm not found. Skipping distill installation. Install Node.js and run: npm i -g @samuelfaj/distill"
+    }
+
     # Install VS Code extensions (source of truth: vscode entries in Brewfile)
     $VSCode = Get-Command code -ErrorAction SilentlyContinue
     if ($VSCode) {

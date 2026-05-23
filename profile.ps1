@@ -19,6 +19,8 @@ Set-PSReadLineOption -Colors @{
 # Ctrl+P/N: history substring search (mirrors zsh-history-substring-search)
 Set-PSReadLineKeyHandler -Key Ctrl+p -Function HistorySearchBackward
 Set-PSReadLineKeyHandler -Key Ctrl+n -Function HistorySearchForward
+# Ctrl+V: paste from clipboard (Emacs mode binds Ctrl+V to QuotedInsert by default)
+Set-PSReadLineKeyHandler -Key Ctrl+v -Function Paste
 
 # eza: modern ls/tree replacement (mirrors eza on macOS)
 if (Get-Command eza -ErrorAction SilentlyContinue) {
