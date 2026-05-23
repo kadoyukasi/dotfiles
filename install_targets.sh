@@ -12,4 +12,5 @@ INSTALL_TARGETS=(
     ".zshrc"
     "Brewfile"
     "Brewfile.lock.json"
+    "Scoopfile"
 )

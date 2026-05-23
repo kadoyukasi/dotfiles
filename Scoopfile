@@ -1,0 +1,20 @@
+# Scoop directives for Windows setup.
+# Lines starting with "bucket " add a bucket.
+# Other non-comment lines are installed as packages.
+
+bucket extras
+bucket versions
+
+# CLI tools
+gh
+mise
+rustup
+tree
+gawk
+gpg
+imagemagick
+
+# Desktop/dev tools
+android-platform-tools
+scrcpy
+vscode
