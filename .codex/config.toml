@@ -1,5 +1,5 @@
 personality = "pragmatic"
-model = "gpt-5.5"
+model = "gpt-5.3-codex"
 model_reasoning_effort = "medium"
 
 [plugins."github@openai-curated"]
@@ -19,5 +19,8 @@ enabled = true
 
 [mcp_servers.serena]
 startup_timeout_sec = 15
-command = "uvx"
-args = ["serena", "start-mcp-server", "--project-from-cwd", "--context=codex"]
+command = "serena"
+args = ["start-mcp-server", "--project-from-cwd", "--context=codex"]
+
+[features]
+memories = true

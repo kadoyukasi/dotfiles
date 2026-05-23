@@ -2,6 +2,12 @@
 # Mirrors zsh-syntax-highlighting + zsh-autosuggestions + zsh-history-substring-search
 Import-Module PSReadLine -ErrorAction SilentlyContinue
 
+# uv tools (serena, etc.)
+$UvToolsBin = Join-Path $env:USERPROFILE ".local\bin"
+if (Test-Path $UvToolsBin) {
+    $env:PATH = "$UvToolsBin;$env:PATH"
+}
+
 Set-PSReadLineOption -EditMode Emacs
 Set-PSReadLineOption -PredictionSource History
 Set-PSReadLineOption -PredictionViewStyle InlineView
