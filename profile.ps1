@@ -27,6 +27,9 @@ Set-PSReadLineKeyHandler -Key Ctrl+p -Function HistorySearchBackward
 Set-PSReadLineKeyHandler -Key Ctrl+n -Function HistorySearchForward
 # Ctrl+V: paste from clipboard (Emacs mode binds Ctrl+V to QuotedInsert by default)
 Set-PSReadLineKeyHandler -Key Ctrl+v -Function Paste
+# F9: menu completion (Ctrl+Space removed — conflicts with Japanese IME switching)
+Remove-PSReadLineKeyHandler -Key Ctrl+Spacebar -ErrorAction SilentlyContinue
+Set-PSReadLineKeyHandler -Key F9 -Function MenuComplete
 
 # eza: modern ls/tree replacement (mirrors eza on macOS)
 if (Get-Command eza -ErrorAction SilentlyContinue) {
@@ -43,6 +46,17 @@ if (Get-Command zoxide -ErrorAction SilentlyContinue) {
 }
 
 # starship: cross-platform prompt (mirrors pure prompt on macOS)
+# Explicitly resolve config path via symlink target so it works even when
+# $HOME/.config already existed and the directory symlink was skipped by install.ps1.
+if (-not $env:STARSHIP_CONFIG) {
+    $ProfileItem = Get-Item -LiteralPath $PROFILE -ErrorAction SilentlyContinue
+    $ProfileTarget = if ($ProfileItem -and $ProfileItem.LinkType) { $ProfileItem.Target } else { $PROFILE }
+    $DotfilesDir = Split-Path -Parent $ProfileTarget
+    $CandidateConfig = Join-Path $DotfilesDir ".config\starship.toml"
+    if (Test-Path -LiteralPath $CandidateConfig) {
+        $env:STARSHIP_CONFIG = $CandidateConfig
+    }
+}
 if (Get-Command starship -ErrorAction SilentlyContinue) {
     Invoke-Expression (&starship init powershell)
 }

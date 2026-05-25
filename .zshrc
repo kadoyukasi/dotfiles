@@ -22,6 +22,7 @@ setopt SHARE_HISTORY
 stty -ixon
 
 bindkey -e
+bindkey "^@" undefined-key  # free Ctrl+Space (^@/NUL) for Japanese IME switching
 bindkey '^P' history-substring-search-up
 bindkey '^N' history-substring-search-down
 bindkey "^[[3~" delete-char
