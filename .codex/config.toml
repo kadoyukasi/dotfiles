@@ -1,5 +1,5 @@
 personality = "pragmatic"
-model = "gpt-5.3-codex"
+model = "gpt-5.4"
 model_reasoning_effort = "medium"
 
 [plugins."github@openai-curated"]
@@ -17,10 +17,24 @@ enabled = true
 [plugins."browser@openai-bundled"]
 enabled = true
 
+[plugins."context-mode@context-mode"]
+enabled = true
+
 [mcp_servers.serena]
 startup_timeout_sec = 15
 command = "serena"
 args = ["start-mcp-server", "--project-from-cwd", "--context=codex"]
 
+[mcp_servers.context-mode]
+command = "node"
+args = ["./start.mjs"]
+cwd = "C:\\Users\\kyasu\\.codex\\.tmp\\marketplaces\\context-mode"
+default_tools_approval_mode = "auto"
+
+[mcp_servers.context-mode.env]
+CONTEXT_MODE_PLATFORM = "codex"
+
 [features]
 memories = true
+plugin_hooks = true
+hooks = true

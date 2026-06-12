@@ -5,6 +5,13 @@
 !.gitignore
 !AGENTS.md
 !config.toml
+!hooks.json
+!hooks/
+!hooks/common.py
+!hooks/session_start.py
+!hooks/pre_tool_use.py
+!hooks/permission_request.py
+!hooks/user_prompt_submit.py
 
 # Track user-authored policy and custom skill
 !rules/

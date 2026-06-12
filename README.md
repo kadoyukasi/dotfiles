@@ -57,6 +57,30 @@ mv ~/.codex ~/.codex.backup.$(date +%Y%m%d-%H%M%S)
 
 `.codex/.gitignore` is configured to track only managed files (`AGENTS.md`, `config.toml`) and ignore runtime/generated files.
 
+This repository also includes project-scoped Codex hooks in `.codex/hooks.json`.
+
+The hooks are repo-local and currently do four things:
+
+- add startup context for dotfiles-specific conventions
+- warn when editing install scripts, hook files, or Codex config
+- deny obviously destructive shell commands through Codex hooks
+- block prompts that appear to contain raw secrets or private keys
+
+They complement, not replace, the git pre-commit secret scan in `.githooks/pre-commit`.
+
+### Context-mode workflow
+
+This repository is tuned to use `context-mode` as the first compression layer for large inputs, and `distill` as the final user-visible summary layer.
+
+Preferred routing:
+
+- large logs, test output, snapshots, CSV, or long command output: `ctx_execute_file` or `ctx_execute`
+- large references or docs you may query again: `ctx_index` then `ctx_search`
+- multiple related shell/data gathering steps: `ctx_batch_execute`
+- final concise answer to the user: `distill` style output
+
+In short: keep raw bytes out of the conversation when `ctx_*` tools can process or index them first.
+
 ## GitHub Copilot global instructions
 
 Global Copilot user instructions are managed in `.copilot/instructions/global.instructions.md`.

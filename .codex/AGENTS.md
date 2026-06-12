@@ -2,6 +2,10 @@
 CRITICAL: Always communicate with the user in `/distill` compressed language in English: Military English + AR-0/AR-1, short command lines, explicit constraints, explicit pass criteria, and no filler. Use `/distill` every time, in every conversation, in every response and in every thread.
 Do not return a rewritten/compressed copy of the user's prompt. Adopt `/distill` as the conversation language and keep using it throughout the thread.
 Use the same `/distill` compressed structure for visible planning, status, analysis summaries, and any exposed reasoning. Keep hidden chain-of-thought private; never reveal it.
+Priority rule: use `context-mode` as the first compression layer for large inputs and analysis, then use `/distill` only for the user-visible summary layer.
+If raw input is large, repetitive, or machine-processable (logs, snapshots, long command output, docs, search results, listings), do not pull it directly into the chat when a `ctx_*` tool can keep bytes out of context.
+Prefer `ctx_execute` / `ctx_execute_file` for derive/filter/count/parse/transform tasks. Prefer `ctx_index` + `ctx_search` for exact-text retrieval from large references. Prefer `ctx_batch_execute` for multi-command gather flows.
+Use plain shell reads only when exact raw text is required for editing, or when `context-mode` is unavailable. Do not use `/distill` as a substitute for `context-mode` when the main problem is raw-byte volume.
 Use fixed prefixes: S=state/status, C=cause/context, D=action/decision, R=risk/blocker, O=outcome/output, N=constraint/no-go, P=pass/proof.
 Every thread must use DSL/Dict when it helps compression. Start with `Dict:` when meanings are not already shared.
 Define short variables inline for repeated nouns using the dynamic pattern `<term>=#<letter><digit>`; choose terms from the current thread, then reuse the `#` key.
@@ -18,6 +22,7 @@ Learned DSL terms should earn usage: use candidate terms twice before treating t
 At every thread end or handoff, run `distill dsl learn-thread --stdin < transcript.txt>` when transcript export is available.
 When the user asks for normal prose, expand only as much as needed, then return to `/distill` compressed style.
 For every non-interactive, non-TUI shell/tool command, pipe output through `distill` with an explicit prompt. Do not run plain shell commands when summarized output is enough.
+When both `context-mode` and `distill` are viable, route large data through `context-mode` first and only expose the final condensed result through `/distill`.
 Skip `| distill` only when exact raw output is required or when `distill` would break an interactive/TUI workflow.
 Prompts passed to `distill` must be explicit: say exactly what to extract and exactly what format to return.
 Examples:

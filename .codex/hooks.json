@@ -1,0 +1,51 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$(git rev-parse --show-toplevel)/.codex/hooks/session_start.py\"",
+            "commandWindows": "python (Join-Path (git rev-parse --show-toplevel).Trim() '.codex/hooks/session_start.py')"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|apply_patch|Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$(git rev-parse --show-toplevel)/.codex/hooks/pre_tool_use.py\"",
+            "commandWindows": "python (Join-Path (git rev-parse --show-toplevel).Trim() '.codex/hooks/pre_tool_use.py')"
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "matcher": "Bash|apply_patch|Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$(git rev-parse --show-toplevel)/.codex/hooks/permission_request.py\"",
+            "commandWindows": "python (Join-Path (git rev-parse --show-toplevel).Trim() '.codex/hooks/permission_request.py')"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$(git rev-parse --show-toplevel)/.codex/hooks/user_prompt_submit.py\"",
+            "commandWindows": "python (Join-Path (git rev-parse --show-toplevel).Trim() '.codex/hooks/user_prompt_submit.py')"
+          }
+        ]
+      }
+    ]
+  }
+}
