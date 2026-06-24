@@ -36,10 +36,47 @@ SENSITIVE_CONTENT_PATTERNS=(
     '(api[_-]?key|access[_-]?token|secret|password)\s*[:=]\s*["'"'"']?[A-Za-z0-9_./+\\=-]{12,}'
 )
 
+IGNORE_LINE_MARKER='secret-check-ignore-line'
+IGNORE_NEXT_LINE_MARKER='secret-check-ignore-next-line'
+IGNORE_FILE_NAMES=(
+    '.secret-check-ignore'
+    '.git-secret-check-ignore'
+)
+IGNORE_FILE_PATHS=()
+
+TMPFILE="$(mktemp)"
+trap 'rm -f "$TMPFILE"' EXIT
+
+repo_root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+if [ -n "$repo_root" ]; then
+    for ignore_filename in "${IGNORE_FILE_NAMES[@]}"; do
+        ignore_path="$repo_root/$ignore_filename"
+        if [ -f "$ignore_path" ]; then
+            while IFS= read -r line; do
+                line="${line%%#*}"
+                line="$(printf '%s' "$line" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+                [ -n "$line" ] && IGNORE_FILE_PATHS+=("$line")
+            done < "$ignore_path"
+        fi
+    done
+fi
+
 violations=0
 
 while IFS= read -r path; do
     [ -z "$path" ] && continue
+
+    # Skip files matched by ignore file patterns.
+    if [ "${#IGNORE_FILE_PATHS[@]}" -gt 0 ]; then
+        for ignore_pattern in "${IGNORE_FILE_PATHS[@]}"; do
+            case "$path" in
+                $ignore_pattern)
+                    echo "[secret-check] ignored by ignore file: $path"
+                    continue 2
+                    ;;
+            esac
+        done
+    fi
 
     for pattern in "${SENSITIVE_PATH_PATTERNS[@]}"; do
         if echo "$path" | grep -Eq -- "$pattern"; then
@@ -49,14 +86,36 @@ while IFS= read -r path; do
         fi
     done
 
-    # Read staged blob, not working tree file.
-    staged_content="$(git show ":$path" 2>/dev/null || true)"
-    [ -z "$staged_content" ] && continue
+    # Read staged blob, not working tree file. Avoid storing null bytes in shell variables.
+    if ! git show ":$path" 2>/dev/null > "$TMPFILE"; then
+        continue
+    fi
+
+    ignore_filtered="${TMPFILE}.filtered"
+    ignore_next=0
+    while IFS= read -r line || [ -n "$line" ]; do
+        if [ "$ignore_next" -eq 1 ]; then
+            ignore_next=0
+            continue
+        fi
+
+        if printf '%s\n' "$line" | grep -F -q -- "$IGNORE_NEXT_LINE_MARKER"; then
+            ignore_next=1
+            continue
+        fi
+
+        if printf '%s\n' "$line" | grep -F -q -- "$IGNORE_LINE_MARKER"; then
+            continue
+        fi
+
+        printf '%s\n' "$line"
+    done < "$TMPFILE" > "$ignore_filtered"
+    mv "$ignore_filtered" "$TMPFILE"
 
     for pattern in "${SENSITIVE_CONTENT_PATTERNS[@]}"; do
-        if echo "$staged_content" | grep -E -i -n -- "$pattern" >/dev/null; then
+        if grep -a -E -i -n -- "$pattern" "$TMPFILE" >/dev/null; then
             echo "[secret-check] blocked by content pattern in: $path"
-            echo "$staged_content" | grep -E -i -n -- "$pattern" | head -n 3
+            grep -a -E -i -n -- "$pattern" "$TMPFILE" | head -n 3
             violations=1
         fi
     done
