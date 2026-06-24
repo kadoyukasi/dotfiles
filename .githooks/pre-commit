@@ -36,6 +36,9 @@ SENSITIVE_CONTENT_PATTERNS=(
     '(api[_-]?key|access[_-]?token|secret|password)\s*[:=]\s*["'"'"']?[A-Za-z0-9_./+\\=-]{12,}'
 )
 
+SENSITIVE_CONTENT_PATTERN=$(printf '%s|' "${SENSITIVE_CONTENT_PATTERNS[@]}")
+SENSITIVE_CONTENT_PATTERN="${SENSITIVE_CONTENT_PATTERN%|}"
+
 IGNORE_LINE_MARKER='secret-check-ignore-line'
 IGNORE_NEXT_LINE_MARKER='secret-check-ignore-next-line'
 IGNORE_FILE_NAMES=(
@@ -99,26 +102,25 @@ while IFS= read -r path; do
             continue
         fi
 
-        if printf '%s\n' "$line" | grep -F -q -- "$IGNORE_NEXT_LINE_MARKER"; then
-            ignore_next=1
-            continue
-        fi
-
-        if printf '%s\n' "$line" | grep -F -q -- "$IGNORE_LINE_MARKER"; then
-            continue
-        fi
+        case "$line" in
+            *"$IGNORE_NEXT_LINE_MARKER"*)
+                ignore_next=1
+                continue
+                ;;
+            *"$IGNORE_LINE_MARKER"*)
+                continue
+                ;;
+        esac
 
         printf '%s\n' "$line"
     done < "$TMPFILE" > "$ignore_filtered"
     mv "$ignore_filtered" "$TMPFILE"
 
-    for pattern in "${SENSITIVE_CONTENT_PATTERNS[@]}"; do
-        if grep -a -E -i -n -- "$pattern" "$TMPFILE" >/dev/null; then
-            echo "[secret-check] blocked by content pattern in: $path"
-            grep -a -E -i -n -- "$pattern" "$TMPFILE" | head -n 3
-            violations=1
-        fi
-    done
+    if grep -a -E -i -n -- "$SENSITIVE_CONTENT_PATTERN" "$TMPFILE" >/dev/null; then
+        echo "[secret-check] blocked by content pattern in: $path"
+        grep -a -E -i -n -- "$SENSITIVE_CONTENT_PATTERN" "$TMPFILE" | head -n 3
+        violations=1
+    fi
 done <<< "$STAGED_FILES"
 
 if [ "$violations" -ne 0 ]; then

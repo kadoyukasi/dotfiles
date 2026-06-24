@@ -15,7 +15,6 @@
 
 # Track user-authored policy and custom skill
 !rules/
-!rules/default.rules
 !skills/
 !skills/distill/
 !skills/distill/SKILL.md
