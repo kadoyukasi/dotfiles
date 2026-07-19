@@ -1,0 +1,6 @@
+*.sh text eol=lf
+.githooks/* text eol=lf
+*.ps1 text eol=lf
+*.json text eol=lf
+*.toml text eol=lf
+.codex/config.toml filter=codex-config

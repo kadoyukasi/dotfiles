@@ -8,6 +8,7 @@
 !hooks.json
 !hooks/
 !hooks/common.py
+!hooks/run.py
 !hooks/session_start.py
 !hooks/pre_tool_use.py
 !hooks/permission_request.py

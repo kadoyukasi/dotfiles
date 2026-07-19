@@ -57,7 +57,11 @@ mv ~/.codex ~/.codex.backup.$(date +%Y%m%d-%H%M%S)
 
 `.codex/.gitignore` tracks the managed configuration, hooks, rules, and custom skills while ignoring runtime/generated files.
 
-This repository also includes project-scoped Codex hooks in `.codex/hooks.json`.
+Codex writes machine-generated sections such as `[projects."<absolute-path>"]`, `[hooks.state]`, and marketplace revision metadata into the user config after project or hook approval. They contain host-specific paths or local approval/cache state.
+
+The install scripts configure a repository-local Git clean filter for `.codex/config.toml`. Machine-local sections remain available to Codex in the working tree, but `git diff`, staging, and commits see only the portable settings. The pre-commit hook rejects these sections if the filter is missing or bypassed. The uninstall scripts remove the repository-local filter configuration.
+
+This repository also includes project-scoped Codex hooks in `.codex/hooks.json`. Because `.codex` is linked into the user configuration directory, Codex discovers the hook definitions from every working directory. The hook dispatcher resolves the managed dotfiles clone and exits successfully unless Codex is running inside that clone, so unrelated repositories never execute dotfiles-specific hook code.
 
 The hooks are repo-local and currently do four things:
 
@@ -106,7 +110,11 @@ Run the platform install script (`./install.sh` on macOS, `./install.ps1` on Win
 
 The tracked `.gitconfig` includes `~/.gitconfig.local`. The install scripts write the machine-specific hooks path to that untracked local file, so moving or cloning this repository on another machine does not modify the tracked dotfiles. The uninstall scripts remove the value only when it still points to the current clone.
 
+The uninstall scripts also remove only symbolic links that still point into the current clone. Links repointed to another dotfiles clone or user-managed target are preserved.
+
 That means the hook is applied to all Git repositories on this machine, unless a repository overrides `core.hooksPath` locally. Git for Windows runs `.githooks/pre-commit` through its bundled Bash; macOS uses the script's Bash shebang.
+
+`.gitattributes` forces LF endings for shell scripts and Git hooks so a Windows checkout remains executable by Git Bash and macOS Bash.
 
 ## Package list management
 

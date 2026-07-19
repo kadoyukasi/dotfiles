@@ -27,6 +27,7 @@ $InstallTargets = @(
 
 function Remove-Link {
     param(
+        [Parameter(Mandatory = $true)][string]$Source,
         [Parameter(Mandatory = $true)][string]$Target
     )
 
@@ -39,8 +40,25 @@ function Remove-Link {
     $IsReparsePoint = ($Item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0
 
     if ($IsReparsePoint) {
-        Remove-Item -LiteralPath $Target
-        Write-Host "Removed $Target."
+        $LinkTarget = @($Item.Target)[0]
+        if ([string]::IsNullOrWhiteSpace($LinkTarget)) {
+            Write-Host "$Target has no readable symlink target. Skipping."
+            return
+        }
+
+        if (-not [System.IO.Path]::IsPathRooted($LinkTarget)) {
+            $LinkTarget = Join-Path (Split-Path -Parent $Target) $LinkTarget
+        }
+
+        $ExpectedPath = [System.IO.Path]::GetFullPath($Source).TrimEnd('\', '/')
+        $ActualPath = [System.IO.Path]::GetFullPath($LinkTarget).TrimEnd('\', '/')
+        if ([string]::Equals($ActualPath, $ExpectedPath, [System.StringComparison]::OrdinalIgnoreCase)) {
+            Remove-Item -LiteralPath $Target
+            Write-Host "Removed $Target."
+        }
+        else {
+            Write-Host "$Target points outside this dotfiles clone. Skipping."
+        }
     }
     else {
         Write-Host "$Target is not a symlink. Skipping."
@@ -48,17 +66,26 @@ function Remove-Link {
 }
 
 foreach ($Item in $InstallTargets) {
+    $SourcePath = Join-Path $DotfilesDir $Item
     $TargetPath = Join-Path $HOME $Item
-    Remove-Link -Target $TargetPath
+    Remove-Link -Source $SourcePath -Target $TargetPath
 }
 
 # Remove PowerShell profile symlink
-Remove-Link -Target $PROFILE
+$ProfileSource = Join-Path $DotfilesDir "profile.ps1"
+Remove-Link -Source $ProfileSource -Target $PROFILE
 
 Write-Host "Dotfiles have been uninstalled."
 
 $CurrentHooksPath = git config --file $GitLocalConfig --get core.hooksPath 2>$null
-if ($CurrentHooksPath -eq $HooksPath) {
+$NormalizedCurrentHooksPath = "$CurrentHooksPath".Replace('\', '/').TrimEnd('/')
+$NormalizedHooksPath = $HooksPath.TrimEnd('/')
+if ([string]::Equals($NormalizedCurrentHooksPath, $NormalizedHooksPath, [System.StringComparison]::OrdinalIgnoreCase)) {
     git config --file $GitLocalConfig --unset core.hooksPath
     Write-Host "Unset global git hooks path ($HooksPath) from $GitLocalConfig."
+}
+
+git -C $DotfilesDir config --remove-section filter.codex-config 2>$null
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "Removed the repository-local Codex config filter."
 }

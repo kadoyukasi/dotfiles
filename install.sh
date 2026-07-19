@@ -82,6 +82,11 @@ echo "Dotfiles have been linked to your home directory."
 if git -C "$DOTFILES_DIR" rev-parse --git-dir >/dev/null 2>&1; then
     git config --file "$GIT_LOCAL_CONFIG" core.hooksPath "$DOTFILES_DIR/.githooks"
     echo "Global git hooks path has been set to $DOTFILES_DIR/.githooks."
+
+    git -C "$DOTFILES_DIR" config filter.codex-config.clean .githooks/clean-codex-config
+    git -C "$DOTFILES_DIR" config filter.codex-config.smudge cat
+    git -C "$DOTFILES_DIR" config filter.codex-config.required true
+    echo "Codex machine-local config state will be excluded from Git blobs."
 fi
 
 install_packages

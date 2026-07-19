@@ -1,0 +1,27 @@
+#!/bin/bash
+
+set -euo pipefail
+
+# Codex writes machine-local approval and cache state into the user config.
+# Keep that state in the working tree, but never store it in Git blobs.
+awk '
+function is_table(line) {
+    return line ~ /^\[\[?[^]]+\]\]?[[:space:]]*(#.*)?$/
+}
+
+function is_machine_state(line) {
+    return line ~ /^\[projects\./ || \
+        line ~ /^\[hooks\.state(\]|\.)/ || \
+        line ~ /^\[marketplaces\./
+}
+
+{
+    if (is_table($0)) {
+        skip = is_machine_state($0)
+    }
+
+    if (!skip) {
+        print
+    }
+}
+'

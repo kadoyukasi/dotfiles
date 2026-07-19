@@ -33,7 +33,7 @@ SENSITIVE_CONTENT_PATTERNS=(
     'xox[baprs]-[A-Za-z0-9-]{10,}'
     'AIza[0-9A-Za-z\\-_]{35}'
     'sk_live_[0-9A-Za-z]{20,}'
-    '(api[_-]?key|access[_-]?token|secret|password)\s*[:=]\s*["'"'"']?[A-Za-z0-9_./+\\=-]{12,}'
+    '(api[_-]?key|access[_-]?token|secret|password)[[:space:]]*[:=][[:space:]]*["'"'"']?[A-Za-z0-9_./+\\=-]{12,}'
 )
 
 SENSITIVE_CONTENT_PATTERN=$(printf '%s|' "${SENSITIVE_CONTENT_PATTERNS[@]}")
@@ -91,6 +91,14 @@ while IFS= read -r path; do
 
     # Read staged blob, not working tree file. Avoid storing null bytes in shell variables.
     if ! git show ":$path" 2>/dev/null > "$TMPFILE"; then
+        continue
+    fi
+
+    if [ "$path" = ".codex/config.toml" ] && \
+        grep -a -E -n '^\[(projects\.|hooks\.state(\]|\.)|marketplaces\.)' "$TMPFILE" >/dev/null; then
+        echo "[secret-check] blocked machine-local Codex state in: $path"
+        echo "Run ./install.sh (macOS) or ./install.ps1 (Windows) to enable the clean filter."
+        violations=1
         continue
     fi
 

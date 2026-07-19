@@ -44,10 +44,17 @@ should_unlink_item() {
 }
 
 remove_link() {
-    local target="$1"
+    local source="$1"
+    local target="$2"
+    local link_source
     if [ -L "$target" ]; then
-        rm "$target"
-        echo "Removed $target."
+        link_source="$(readlink "$target")"
+        if [ "$link_source" = "$source" ]; then
+            rm "$target"
+            echo "Removed $target."
+        else
+            echo "$target points outside this dotfiles clone. Skipping."
+        fi
     else
         echo "No symlink found for $target. Skipping."
     fi
@@ -60,8 +67,9 @@ for item in "${INSTALL_TARGETS[@]}"; do
         continue
     fi
 
+    source_path="$DOTFILES_DIR/$item"
     target="$HOME/$item"
-    remove_link "$target"
+    remove_link "$source_path" "$target"
 done
 echo "Dotfiles have been uninstalled."
 
@@ -75,4 +83,9 @@ fi
 if [ "$CURRENT_HOOKS_DIR" = "$DOTFILES_DIR/.githooks" ]; then
     git config --file "$GIT_LOCAL_CONFIG" --unset core.hooksPath
     echo "Unset global git hooks path ($DOTFILES_DIR/.githooks)."
+fi
+
+if git -C "$DOTFILES_DIR" rev-parse --git-dir >/dev/null 2>&1; then
+    git -C "$DOTFILES_DIR" config --remove-section filter.codex-config 2>/dev/null || true
+    echo "Removed the repository-local Codex config filter."
 fi

@@ -92,7 +92,7 @@ try {
     if ($LinkErrors.Count -gt 0) {
         Write-Host "WARNING: $($LinkErrors.Count) symlink(s) failed to create:"
         $LinkErrors | ForEach-Object { Write-Host "  - $_" }
-        Write-Host "Hint: run with 'sudo pwsh -File .\install.ps1' for elevated privileges."
+        Write-Host "Hint: enable Windows Developer Mode or rerun this script from an Administrator PowerShell session."
         exit 1
     }
 
@@ -100,6 +100,11 @@ try {
 
     git config --file $GitLocalConfig core.hooksPath $HooksPath
     Write-Host "Global git hooks path has been set to $HooksPath via $GitLocalConfig."
+
+    git -C $DotfilesDir config filter.codex-config.clean .githooks/clean-codex-config
+    git -C $DotfilesDir config filter.codex-config.smudge cat
+    git -C $DotfilesDir config filter.codex-config.required true
+    Write-Host "Codex machine-local config state will be excluded from Git blobs."
 
     $Scoop = Get-Command scoop -ErrorAction SilentlyContinue
     if (-not $Scoop) {

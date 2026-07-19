@@ -6,8 +6,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$(git rev-parse --show-toplevel)/.codex/hooks/session_start.py\"",
-            "commandWindows": "python (Join-Path (git rev-parse --show-toplevel).Trim() '.codex/hooks/session_start.py')"
+            "command": "python3 \"${CODEX_HOME:-$HOME/.codex}/hooks/run.py\" session_start",
+            "commandWindows": "$codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $HOME '.codex' }; python (Join-Path $codexHome 'hooks/run.py') session_start"
           }
         ]
       }
@@ -18,8 +18,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$(git rev-parse --show-toplevel)/.codex/hooks/pre_tool_use.py\"",
-            "commandWindows": "python (Join-Path (git rev-parse --show-toplevel).Trim() '.codex/hooks/pre_tool_use.py')"
+            "command": "python3 \"${CODEX_HOME:-$HOME/.codex}/hooks/run.py\" pre_tool_use",
+            "commandWindows": "$codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $HOME '.codex' }; python (Join-Path $codexHome 'hooks/run.py') pre_tool_use"
           }
         ]
       }
@@ -30,8 +30,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$(git rev-parse --show-toplevel)/.codex/hooks/permission_request.py\"",
-            "commandWindows": "python (Join-Path (git rev-parse --show-toplevel).Trim() '.codex/hooks/permission_request.py')"
+            "command": "python3 \"${CODEX_HOME:-$HOME/.codex}/hooks/run.py\" permission_request",
+            "commandWindows": "$codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $HOME '.codex' }; python (Join-Path $codexHome 'hooks/run.py') permission_request"
           }
         ]
       }
@@ -41,8 +41,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$(git rev-parse --show-toplevel)/.codex/hooks/user_prompt_submit.py\"",
-            "commandWindows": "python (Join-Path (git rev-parse --show-toplevel).Trim() '.codex/hooks/user_prompt_submit.py')"
+            "command": "python3 \"${CODEX_HOME:-$HOME/.codex}/hooks/run.py\" user_prompt_submit",
+            "commandWindows": "$codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $HOME '.codex' }; python (Join-Path $codexHome 'hooks/run.py') user_prompt_submit"
           }
         ]
       }
