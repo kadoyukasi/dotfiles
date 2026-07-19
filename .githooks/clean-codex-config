@@ -15,12 +15,22 @@ function is_machine_state(line) {
         line ~ /^\[marketplaces\./
 }
 
+function has_machine_home_path(line) {
+    return line ~ /\/(Users|home)\/[^\/]+\// || \
+        line ~ /[A-Za-z]:[\\\/]Users[\\\/][^\\\/]+[\\\/]/
+}
+
+function is_machine_assignment(line) {
+    return line ~ /^(notify|NODE_REPL_TRUSTED_CODE_PATHS|CODEX_HOME)[[:space:]]*=/ && \
+        has_machine_home_path(line)
+}
+
 {
     if (is_table($0)) {
         skip = is_machine_state($0)
     }
 
-    if (!skip) {
+    if (!skip && !is_machine_assignment($0)) {
         print
     }
 }

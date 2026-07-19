@@ -59,9 +59,9 @@ mv ~/.codex ~/.codex.backup.$(date +%Y%m%d-%H%M%S)
 
 `.codex/.gitignore` tracks the managed configuration, hooks, rules, and custom skills while ignoring runtime/generated files.
 
-Codex writes machine-generated sections such as `[projects."<absolute-path>"]`, `[hooks.state]`, and marketplace revision metadata into the user config after project or hook approval. They contain host-specific paths or local approval/cache state.
+Codex writes machine-generated sections such as `[projects."<absolute-path>"]`, `[hooks.state]`, marketplace revision metadata, and machine-local command/environment values into the user config after project or hook approval. They contain host-specific paths or local approval/cache state.
 
-The install scripts configure a repository-local Git clean filter for `.codex/config.toml`. Machine-local sections remain available to Codex in the working tree, but `git diff`, staging, and commits see only the portable settings. The pre-commit hook rejects these sections if the filter is missing or bypassed. The uninstall scripts remove the repository-local filter configuration.
+The install scripts configure a repository-local Git clean filter for `.codex/config.toml`. Machine-local sections and known path-bearing assignments remain available to Codex in the working tree, but `git diff`, staging, and commits see only the portable settings. The pre-commit hook rejects these sections if the filter is missing or bypassed. The uninstall scripts remove the repository-local filter configuration.
 
 This repository also includes project-scoped Codex hooks in `.codex/hooks.json`. Because `.codex` is linked into the user configuration directory, Codex discovers the hook definitions from every working directory. The hook dispatcher resolves the managed dotfiles clone and exits successfully unless Codex is running inside that clone, so unrelated repositories never execute dotfiles-specific hook code.
 
@@ -107,6 +107,7 @@ It checks staged files for:
 
 - Sensitive filenames/path patterns (e.g. `auth.json`, `.env*`, private key files, sqlite/db artifacts)
 - High-signal secret patterns in content (private keys, common API token formats, password/token-like assignments)
+- Machine-local home paths for macOS, Linux, and Windows in staged content
 
 Run the platform install script (`./install.sh` on macOS, `./install.ps1` on Windows PowerShell) to configure **global** `core.hooksPath` to this clone's `.githooks` directory.
 

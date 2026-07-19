@@ -39,6 +39,14 @@ SENSITIVE_CONTENT_PATTERNS=(
 SENSITIVE_CONTENT_PATTERN=$(printf '%s|' "${SENSITIVE_CONTENT_PATTERNS[@]}")
 SENSITIVE_CONTENT_PATTERN="${SENSITIVE_CONTENT_PATTERN%|}"
 
+MACHINE_LOCAL_PATH_PATTERNS=(
+    "/Users/[A-Za-z0-9._-]+/"
+    "/home/[A-Za-z0-9._-]+/"
+    "[A-Za-z]:[\\\\/]Users[\\\\/][A-Za-z0-9._-]+[\\\\/]"
+)
+MACHINE_LOCAL_PATH_PATTERN=$(printf '%s|' "${MACHINE_LOCAL_PATH_PATTERNS[@]}")
+MACHINE_LOCAL_PATH_PATTERN="${MACHINE_LOCAL_PATH_PATTERN%|}"
+
 IGNORE_LINE_MARKER='secret-check-ignore-line'
 IGNORE_NEXT_LINE_MARKER='secret-check-ignore-next-line'
 IGNORE_FILE_NAMES=(
@@ -123,6 +131,12 @@ while IFS= read -r path; do
         printf '%s\n' "$line"
     done < "$TMPFILE" > "$ignore_filtered"
     mv "$ignore_filtered" "$TMPFILE"
+
+    if grep -a -E -n -- "$MACHINE_LOCAL_PATH_PATTERN" "$TMPFILE" >/dev/null; then
+        echo "[secret-check] blocked machine-local home path in: $path"
+        grep -a -E -n -- "$MACHINE_LOCAL_PATH_PATTERN" "$TMPFILE" | head -n 3
+        violations=1
+    fi
 
     if grep -a -E -i -n -- "$SENSITIVE_CONTENT_PATTERN" "$TMPFILE" >/dev/null; then
         echo "[secret-check] blocked by content pattern in: $path"
