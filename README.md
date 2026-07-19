@@ -48,6 +48,8 @@ Codex user settings are managed in `.codex/` in this repository.
 
 Platform install scripts link `.codex` to `$HOME/.codex` when it does not already exist.
 
+The managed Codex configuration starts Serena through `uvx` with Python 3.13. The package manifests install `uv`; on first startup, `uvx` may download Python and Serena dependencies, so the MCP startup timeout is set to 60 seconds. Run `/mcp` in Codex to verify that `serena` is connected.
+
 If `$HOME/.codex` already exists and you want to migrate this machine to dotfiles-managed mode, back it up first and then relink:
 
 ```bash

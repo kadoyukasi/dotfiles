@@ -4,3 +4,4 @@ prefix_rule(pattern=["env", "PYTHONPATH=src", "python", "-m", "vidro_koppa.cli",
 prefix_rule(pattern=["/bin/zsh", "-lc", "nohup env PYTHONPATH=src python -m vidro_koppa.cli --db /private/tmp/vidro-koppa-smoke.sqlite3 --ranking config/ranking.yaml webui --host 127.0.0.1 --port 8765 >/private/tmp/vidro-koppa-webui.log 2>&1 & echo $!"], decision="allow")
 prefix_rule(pattern=["/bin/zsh", "-lc", "node .codex/skills/.system/openai-docs/scripts/fetch-codex-manual.mjs --cache-dir /private/tmp/openai-docs-cache 2>&1 | distill \"Return only fetch status, manual path, outline path, and errors.\""], decision="allow")
 prefix_rule(pattern=["git", "config"], decision="allow")
+prefix_rule(pattern=["pnpm", "run", "parse"], decision="allow")

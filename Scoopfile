@@ -10,6 +10,7 @@ gh
 mise
 python
 rustup
+uv
 gawk
 gpg
 imagemagick
