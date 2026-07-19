@@ -2,6 +2,8 @@ $ErrorActionPreference = "Stop"
 
 $DotfilesDir = $PSScriptRoot
 $IsWindowsHost = $env:OS -eq "Windows_NT"
+$GitLocalConfig = Join-Path $HOME ".gitconfig.local"
+$HooksPath = (Join-Path $DotfilesDir ".githooks").Replace('\', '/')
 
 if (-not $IsWindowsHost) {
     Write-Host "This script is for Windows PowerShell. Use ./uninstall.sh on macOS."
@@ -28,12 +30,12 @@ function Remove-Link {
         [Parameter(Mandatory = $true)][string]$Target
     )
 
-    if (-not (Test-Path -LiteralPath $Target)) {
+    $Item = Get-Item -LiteralPath $Target -Force -ErrorAction SilentlyContinue
+    if ($null -eq $Item) {
         Write-Host "No symlink found for $Target. Skipping."
         return
     }
 
-    $Item = Get-Item -LiteralPath $Target
     $IsReparsePoint = ($Item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0
 
     if ($IsReparsePoint) {
@@ -55,8 +57,8 @@ Remove-Link -Target $PROFILE
 
 Write-Host "Dotfiles have been uninstalled."
 
-$CurrentHooksPath = git config --global --get core.hooksPath 2>$null
-if ($CurrentHooksPath -eq "$DotfilesDir/.githooks") {
-    git config --global --unset core.hooksPath
-    Write-Host "Unset global git hooks path ($DotfilesDir/.githooks)."
+$CurrentHooksPath = git config --file $GitLocalConfig --get core.hooksPath 2>$null
+if ($CurrentHooksPath -eq $HooksPath) {
+    git config --file $GitLocalConfig --unset core.hooksPath
+    Write-Host "Unset global git hooks path ($HooksPath) from $GitLocalConfig."
 }

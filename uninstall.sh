@@ -1,6 +1,9 @@
 #!/bin/bash
 
-DOTFILES_DIR="$(cd "$(dirname "$0")" && pwd)"
+set -euo pipefail
+
+DOTFILES_DIR="$(cd "$(dirname "$0")" && pwd -P)"
+GIT_LOCAL_CONFIG="$HOME/.gitconfig.local"
 
 detect_os() {
     case "$(uname -s)" in
@@ -17,11 +20,19 @@ detect_os() {
 }
 
 OS_TYPE="$(detect_os)"
-if [ "$OS_TYPE" = "windows" ]; then
-    echo "Windows is managed with PowerShell in this repository."
-    echo "Please run ./uninstall.ps1 from PowerShell."
-    exit 1
-fi
+case "$OS_TYPE" in
+    macos)
+        ;;
+    windows)
+        echo "Windows is managed with PowerShell in this repository."
+        echo "Please run ./uninstall.ps1 from PowerShell."
+        exit 1
+        ;;
+    *)
+        echo "Unsupported operating system: $(uname -s). This script supports macOS only."
+        exit 1
+        ;;
+esac
 
 should_unlink_item() {
     local item="$1"
@@ -55,8 +66,13 @@ done
 echo "Dotfiles have been uninstalled."
 
 # Remove global hooksPath if it points to this repository
-CURRENT_HOOKS_PATH="$(git config --global --get core.hooksPath || true)"
-if [ "$CURRENT_HOOKS_PATH" = "$DOTFILES_DIR/.githooks" ]; then
-    git config --global --unset core.hooksPath
+CURRENT_HOOKS_PATH="$(git config --file "$GIT_LOCAL_CONFIG" --get core.hooksPath 2>/dev/null || true)"
+CURRENT_HOOKS_DIR=""
+if [ -n "$CURRENT_HOOKS_PATH" ] && [ -d "$CURRENT_HOOKS_PATH" ]; then
+    CURRENT_HOOKS_DIR="$(cd "$CURRENT_HOOKS_PATH" && pwd -P)"
+fi
+
+if [ "$CURRENT_HOOKS_DIR" = "$DOTFILES_DIR/.githooks" ]; then
+    git config --file "$GIT_LOCAL_CONFIG" --unset core.hooksPath
     echo "Unset global git hooks path ($DOTFILES_DIR/.githooks)."
 fi

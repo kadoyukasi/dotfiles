@@ -19,7 +19,9 @@ setopt PRINT_EIGHT_BIT
 setopt PROMPT_SUBST
 setopt SHARE_HISTORY
 
-stty -ixon
+if [[ -t 0 ]]; then
+  stty -ixon
+fi
 
 bindkey -e
 bindkey "^@" undefined-key  # free Ctrl+Space (^@/NUL) for Japanese IME switching
@@ -34,14 +36,14 @@ zstyle ':completion:*' menu select=1
 zstyle ':completion:*:history-words' stop yes
 zstyle ':completion:*:history-words' remove-all-dups yes
 
-eval "$(sheldon source)"
-eval "$(mise activate zsh)"
-source "$HOME/.cargo/env"
-source $HOME/.wasmedge/env
-source "$HOME/.rye/env"
+(( $+commands[sheldon] )) && eval "$(sheldon source)"
+(( $+commands[mise] )) && eval "$(mise activate zsh)"
+[[ -r "$HOME/.cargo/env" ]] && source "$HOME/.cargo/env"
+[[ -r "$HOME/.wasmedge/env" ]] && source "$HOME/.wasmedge/env"
+[[ -r "$HOME/.rye/env" ]] && source "$HOME/.rye/env"
 
 # pnpm
-export PNPM_HOME="/Users/kyasu/Library/pnpm"
+export PNPM_HOME="${PNPM_HOME:-$HOME/Library/pnpm}"
 case ":$PATH:" in
   *":$PNPM_HOME:"*) ;;
   *) export PATH="$PNPM_HOME:$PATH" ;;

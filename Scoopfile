@@ -8,6 +8,7 @@ bucket versions
 # CLI tools (mirrors Brewfile)
 gh
 mise
+python
 rustup
 gawk
 gpg

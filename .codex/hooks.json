@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python \"$(git rev-parse --show-toplevel)/.codex/hooks/session_start.py\"",
+            "command": "python3 \"$(git rev-parse --show-toplevel)/.codex/hooks/session_start.py\"",
             "commandWindows": "python (Join-Path (git rev-parse --show-toplevel).Trim() '.codex/hooks/session_start.py')"
           }
         ]
@@ -18,7 +18,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python \"$(git rev-parse --show-toplevel)/.codex/hooks/pre_tool_use.py\"",
+            "command": "python3 \"$(git rev-parse --show-toplevel)/.codex/hooks/pre_tool_use.py\"",
             "commandWindows": "python (Join-Path (git rev-parse --show-toplevel).Trim() '.codex/hooks/pre_tool_use.py')"
           }
         ]
@@ -30,7 +30,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python \"$(git rev-parse --show-toplevel)/.codex/hooks/permission_request.py\"",
+            "command": "python3 \"$(git rev-parse --show-toplevel)/.codex/hooks/permission_request.py\"",
             "commandWindows": "python (Join-Path (git rev-parse --show-toplevel).Trim() '.codex/hooks/permission_request.py')"
           }
         ]
@@ -41,7 +41,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python \"$(git rev-parse --show-toplevel)/.codex/hooks/user_prompt_submit.py\"",
+            "command": "python3 \"$(git rev-parse --show-toplevel)/.codex/hooks/user_prompt_submit.py\"",
             "commandWindows": "python (Join-Path (git rev-parse --show-toplevel).Trim() '.codex/hooks/user_prompt_submit.py')"
           }
         ]

@@ -1,6 +1,9 @@
 #!/bin/bash
 
-DOTFILES_DIR="$(cd "$(dirname "$0")" && pwd)"
+set -euo pipefail
+
+DOTFILES_DIR="$(cd "$(dirname "$0")" && pwd -P)"
+GIT_LOCAL_CONFIG="$HOME/.gitconfig.local"
 
 detect_os() {
     case "$(uname -s)" in
@@ -17,11 +20,19 @@ detect_os() {
 }
 
 OS_TYPE="$(detect_os)"
-if [ "$OS_TYPE" = "windows" ]; then
-    echo "Windows is managed with PowerShell in this repository."
-    echo "Please run ./install.ps1 from PowerShell."
-    exit 1
-fi
+case "$OS_TYPE" in
+    macos)
+        ;;
+    windows)
+        echo "Windows is managed with PowerShell in this repository."
+        echo "Please run ./install.ps1 from PowerShell."
+        exit 1
+        ;;
+    *)
+        echo "Unsupported operating system: $(uname -s). This script supports macOS only."
+        exit 1
+        ;;
+esac
 
 should_link_item() {
     local item="$1"
@@ -44,7 +55,7 @@ install_packages() {
 link_files() {
     local source="$1"
     local target="$2"
-    if [ -e "$target" ]; then
+    if [ -e "$target" ] || [ -L "$target" ]; then
         echo "File $target already exists in home directory. Skipping."
     else
         ln -s "$source" "$target"
@@ -69,7 +80,7 @@ echo "Dotfiles have been linked to your home directory."
 
 # Enable machine-wide git hooks (applies to all repositories unless overridden)
 if git -C "$DOTFILES_DIR" rev-parse --git-dir >/dev/null 2>&1; then
-    git config --global core.hooksPath "$DOTFILES_DIR/.githooks"
+    git config --file "$GIT_LOCAL_CONFIG" core.hooksPath "$DOTFILES_DIR/.githooks"
     echo "Global git hooks path has been set to $DOTFILES_DIR/.githooks."
 fi
 

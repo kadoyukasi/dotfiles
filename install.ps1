@@ -2,6 +2,8 @@ $ErrorActionPreference = "Stop"
 
 $DotfilesDir = $PSScriptRoot
 $IsWindowsHost = $env:OS -eq "Windows_NT"
+$GitLocalConfig = Join-Path $HOME ".gitconfig.local"
+$HooksPath = (Join-Path $DotfilesDir ".githooks").Replace('\', '/')
 
 if (-not $IsWindowsHost) {
     Write-Host "This script is for Windows PowerShell. Use ./install.sh on macOS."
@@ -10,10 +12,7 @@ if (-not $IsWindowsHost) {
 
 $IsAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if (-not $IsAdmin) {
-    Write-Host "ERROR: This script requires Administrator privileges."
-    Write-Host "Open PowerShell as Administrator and run: pwsh -File .\install.ps1"
-    Write-Host "Do not use 'sudo' - it hides all output by spawning a separate window."
-    exit 1
+    Write-Host "Running without administrator privileges. Symbolic links require Windows Developer Mode or the Create symbolic links user right."
 }
 
 $InstallTargets = @(
@@ -39,7 +38,8 @@ function Link-File {
         [Parameter(Mandatory = $true)][string]$Target
     )
 
-    if (Test-Path -LiteralPath $Target) {
+    $ExistingItem = Get-Item -LiteralPath $Target -Force -ErrorAction SilentlyContinue
+    if ($null -ne $ExistingItem) {
         Write-Host "File $Target already exists in home directory. Skipping."
         return
     }
@@ -98,8 +98,8 @@ try {
 
     Write-Host "Dotfiles have been linked to your home directory."
 
-    git config --global core.hooksPath "$DotfilesDir/.githooks"
-    Write-Host "Global git hooks path has been set to $DotfilesDir/.githooks."
+    git config --file $GitLocalConfig core.hooksPath $HooksPath
+    Write-Host "Global git hooks path has been set to $HooksPath via $GitLocalConfig."
 
     $Scoop = Get-Command scoop -ErrorAction SilentlyContinue
     if (-not $Scoop) {

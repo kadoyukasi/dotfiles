@@ -33,14 +33,14 @@ Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
 
 ### 3. Run the install script
 
-Symbolic link creation requires elevated privileges. Open PowerShell **as Administrator** and run:
+With Windows Developer Mode enabled, run from a normal PowerShell session. Otherwise, open PowerShell **as Administrator** so it can create symbolic links:
 
 ```powershell
-cd F:\work\dotfiles
+Set-Location "<path-to-your-dotfiles-clone>"
 pwsh -File .\install.ps1
 ```
 
-> Note: Do not use `sudo` — Scoop's `sudo` uses `Start-Process -Verb RunAs`, which spawns a separate elevated window and swallows all output. Running directly from an Administrator session is the reliable approach.
+> Note: If elevation is required, open an Administrator session directly. Do not use `sudo` here because its separate elevated process can hide the installer's output.
 
 ## Codex settings
 
@@ -55,7 +55,7 @@ mv ~/.codex ~/.codex.backup.$(date +%Y%m%d-%H%M%S)
 ./install.sh
 ```
 
-`.codex/.gitignore` is configured to track only managed files (`AGENTS.md`, `config.toml`) and ignore runtime/generated files.
+`.codex/.gitignore` tracks the managed configuration, hooks, rules, and custom skills while ignoring runtime/generated files.
 
 This repository also includes project-scoped Codex hooks in `.codex/hooks.json`.
 
@@ -102,9 +102,11 @@ It checks staged files for:
 - Sensitive filenames/path patterns (e.g. `auth.json`, `.env*`, private key files, sqlite/db artifacts)
 - High-signal secret patterns in content (private keys, common API token formats, password/token-like assignments)
 
-Run the platform install script (`./install.sh` on macOS, `./install.ps1` on Windows PowerShell) to configure **global** `core.hooksPath` to this repository's `.githooks` directory.
+Run the platform install script (`./install.sh` on macOS, `./install.ps1` on Windows PowerShell) to configure **global** `core.hooksPath` to this clone's `.githooks` directory.
 
-That means the hook is applied to all git repositories on this machine, unless a repository overrides `core.hooksPath` locally.
+The tracked `.gitconfig` includes `~/.gitconfig.local`. The install scripts write the machine-specific hooks path to that untracked local file, so moving or cloning this repository on another machine does not modify the tracked dotfiles. The uninstall scripts remove the value only when it still points to the current clone.
+
+That means the hook is applied to all Git repositories on this machine, unless a repository overrides `core.hooksPath` locally. Git for Windows runs `.githooks/pre-commit` through its bundled Bash; macOS uses the script's Bash shebang.
 
 ## Package list management
 

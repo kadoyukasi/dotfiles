@@ -9,7 +9,8 @@
   filemode = false
   quotepath = false
   ignorecase = false
-	hooksPath = /Users/kyasu/work/dotfiles/.githooks
+[include]
+  path = ~/.gitconfig.local
 [push]
   default = simple
 [pull]
