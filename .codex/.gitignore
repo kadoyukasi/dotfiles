@@ -5,6 +5,7 @@
 !.gitignore
 !AGENTS.md
 !config.toml
+!*.config.toml
 !hooks.json
 !hooks/
 !hooks/common.py

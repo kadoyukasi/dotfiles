@@ -48,7 +48,7 @@ Codex user settings are managed in `.codex/` in this repository.
 
 Platform install scripts link `.codex` to `$HOME/.codex` when it does not already exist.
 
-The managed Codex configuration starts Serena through `uvx` with Python 3.13. The package manifests install `uv`; on first startup, `uvx` may download Python and Serena dependencies, so the MCP startup timeout is set to 60 seconds. Run `/mcp` in Codex to verify that `serena` is connected.
+The `code` and `full` profiles start Serena through `uvx` with Python 3.13. The package manifests install `uv`; on first startup, `uvx` may download Python and Serena dependencies, so the MCP startup timeout is set to 60 seconds. Run `/mcp` in Codex to verify that `serena` is connected.
 
 If `$HOME/.codex` already exists and you want to migrate this machine to dotfiles-managed mode, back it up first and then relink:
 
@@ -59,11 +59,32 @@ mv ~/.codex ~/.codex.backup.$(date +%Y%m%d-%H%M%S)
 
 `.codex/.gitignore` tracks the managed configuration, hooks, rules, and custom skills while ignoring runtime/generated files.
 
+The default Codex configuration favors lower token use:
+
+- `gpt-5.6-sol` with `model_reasoning_effort = "low"`
+- `model_verbosity = "low"`
+- `context-mode` enabled for large-input processing
+- optional plugins and Serena disabled until a matching CLI profile is selected
+
+Codex 0.134 and later loads profiles from separate files in `~/.codex/`. The managed profiles are:
+
+| Profile | Enables |
+| --- | --- |
+| `code` | GitHub plugin and Serena |
+| `artifacts` | documents, spreadsheets, and presentations plugins |
+| `browser` | in-app browser plugin |
+| `full` | all optional plugins above and Serena |
+
+For example, run `codex --profile code` for repository work or `codex --profile full` when all integrations are needed. Profiles are CLI configuration layers; the desktop app continues to use the base configuration unless integrations are enabled in its settings.
+
+Global communication and safety defaults live in `.codex/AGENTS.md`. Repository-specific invariants live in the root `AGENTS.md`, avoiding repeated or conflicting instructions.
+
 Codex writes machine-generated sections such as `[projects."<absolute-path>"]`, `[hooks.state]`, marketplace revision metadata, and machine-local command/environment values into the user config after project or hook approval. They contain host-specific paths or local approval/cache state.
 
 The install scripts configure a repository-local Git clean filter for `.codex/config.toml`. Machine-local sections and known path-bearing assignments remain available to Codex in the working tree, but `git diff`, staging, and commits see only the portable settings. The pre-commit hook rejects these sections if the filter is missing or bypassed. The uninstall scripts remove the repository-local filter configuration.
 
 This repository also includes project-scoped Codex hooks in `.codex/hooks.json`. Because `.codex` is linked into the user configuration directory, Codex discovers the hook definitions from every working directory. The hook dispatcher resolves the managed dotfiles clone and exits successfully unless Codex is running inside that clone, so unrelated repositories never execute dotfiles-specific hook code.
+
 
 The hooks are repo-local and currently do four things:
 
@@ -76,16 +97,16 @@ They complement, not replace, the git pre-commit secret scan in `.githooks/pre-c
 
 ### Context-mode workflow
 
-This repository is tuned to use `context-mode` as the first compression layer for large inputs, and `distill` as the final user-visible summary layer.
+This repository uses `context-mode` as the first compression layer for large inputs. `distill` is reserved for an explicitly requested compressed result or a final summary that materially benefits from terse S/C/D/R/O/P formatting.
 
 Preferred routing:
 
 - large logs, test output, snapshots, CSV, or long command output: `ctx_execute_file` or `ctx_execute`
 - large references or docs you may query again: `ctx_index` then `ctx_search`
 - multiple related shell/data gathering steps: `ctx_batch_execute`
-- final concise answer to the user: `distill` style output
+- explicitly requested compressed result: `distill` style output
 
-In short: keep raw bytes out of the conversation when `ctx_*` tools can process or index them first.
+Do not pipe tests, builds, lint, diffs, security checks, or infrastructure plans through `distill` for PASS/FAIL or safety decisions. Keep their original exit codes and required raw evidence. In short: keep raw bytes out of the conversation with `ctx_*`, and avoid a second summarization step unless it improves the final user-facing result.
 
 ## GitHub Copilot global instructions
 

@@ -19,17 +19,15 @@ elif tool_name == "Bash" and command_touches_protected_paths(command):
     emit_additional_context(
         "PreToolUse",
         (
-            "This command touches install/hook/Codex config files. Keep install and "
-            "uninstall flows aligned, update README when user-visible behavior changes, "
-            "and preserve context-mode-first routing for large inputs."
+            "Protected dotfiles touched: keep install/uninstall and README aligned; "
+            "use context-mode for large inputs."
         ),
     )
 elif tool_name == "apply_patch" and patch_touches_protected_paths(command):
     emit_additional_context(
         "PreToolUse",
         (
-            "This patch changes install/hook/Codex config files. Preserve existing "
-            "user changes, keep cross-platform behavior aligned, document behavior "
-            "changes, and keep context-mode ahead of distill for large-data workflows."
+            "Protected dotfiles changed: preserve user work, cross-platform behavior, "
+            "and README alignment; use context-mode for large inputs."
         ),
     )

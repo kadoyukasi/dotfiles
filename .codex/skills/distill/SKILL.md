@@ -1,16 +1,16 @@
 ---
 name: distill
-description: Conversation mode that makes the LLM speak in distill compressed language for the whole thread.
+description: Compress a final user-facing result when the user explicitly requests distill or unusually terse S/C/D/R/O/P output. Do not use for routine conversation, raw logs, or test evidence.
 ---
 
 # Distill
 
-Use when user invokes `/distill` or asks to use distill language.
+Use only when the user invokes `/distill` or explicitly asks for distill language.
 
-This is a conversation style mode, not a prompt-compression request.
+Apply it to the requested result, not automatically to the whole thread.
 
 Do not return the user's prompt compressed as an artifact.
-Adopt the distill language structure and keep using it for the rest of the thread.
+Return to normal prose after that result unless the user explicitly asks to continue.
 
 ## Core Rule
 
@@ -60,14 +60,14 @@ AR levels:
 
 ## Thread Behavior
 
-After `/distill` is invoked:
+For the explicitly requested distill result:
 
-- keep answering in distill language until user says normal mode or stop distill
-- use distill structure for status updates, plans, summaries, reviews, and final answers
+- use distill language only for the requested result
+- use distill structure for a final summary, review result, or other explicitly named output
 - do not wrap every answer in `Best`, `More aggressive`, or `Tradeoff`
 - do not output a rewritten/compressed version of the user's latest prompt unless user explicitly asks to compress text
 - keep hidden chain-of-thought private; never reveal it
-- any visible reasoning or analysis summary must use distill language
+- keep unrelated status updates and later turns in the user's normal language
 
 ## Stable DSL
 
@@ -167,10 +167,10 @@ R missing token => merge blocked
 
 ## Variable Dict
 
-Every thread must use DSL/Dict when it helps compression.
-Start with `Dict:` when meanings are not already shared.
-Before every visible response, scan the visible transcript plus the draft response for repeated stable terms that would compress well.
-Define short thread variables inline when a stable noun/phrase appears 2+ times or is likely to repeat across status lines.
+Use DSL/Dict only when it makes the requested compressed result clearer.
+Start with `Dict:` only when meanings are not already shared.
+Scan only the requested result for repeated stable terms that would compress well.
+Define a short variable only when a stable noun or phrase appears at least 3 times.
 Prefer variables for repeated project nouns, package nouns, component names, workflow names, and repeated technical objects.
 The model chooses the variables dynamically from the current task; there is no fixed variable list.
 Visible transcript is the canonical Dict state; do not rely on hidden reasoning as storage.
@@ -201,8 +201,8 @@ Rules:
 - do not define variables for secrets, people, IDs, paths, URLs, or one-off terms
 - do not redefine an active variable; add a new key if meaning changed
 - inline `#` variables are thread-local immediately after explicit assignment
-- persist only variables used more than 5 times in a `distill dsl learn-thread --stdin` transcript
-- remove a learned variable when it is absent from the next learned thread
+- persist variables only when the user explicitly requests learning from a sanitized transcript
+- never persist secrets, personal information, credentials, paths, URLs, or unreviewed conversation text
 
 ## Good Response Forms
 
@@ -291,7 +291,7 @@ Dict+: A1=authentication bug fix
 
 Persisted learned terms start as candidates and promote only through lifecycle rules. A term should not become part of active DSL unless it appears at least twice in a short window or the user explicitly approves it.
 
-At every thread end or handoff, when transcript export is available, run:
+Only when the user explicitly requests learning and a sanitized transcript is available, run:
 
 ```bash
 distill dsl learn-thread --stdin < transcript.txt
@@ -301,9 +301,9 @@ This analyzes repeated usage, rejects sensitive/noisy terms, asks the configured
 
 ## Tool Calls
 
-CRITICAL: Every non-interactive, non-TUI shell/tool command must pipe output through `distill` with an explicit prompt. Do not run plain shell commands when summarized output is enough.
+Use context-mode for large tool output. Use `distill` only to compress the final user-visible result after the source evidence has been retained.
 
-CRITICAL: Skip `| distill` only when exact raw output is required or when `distill` would break an interactive/TUI workflow.
+Never pipe tests, builds, lint, diffs, security checks, permission checks, infrastructure plans, or interactive/TUI commands through `distill` for PASS/FAIL or safety decisions.
 
 CRITICAL: Your prompt to `distill` must be fully explicit. State exactly what you want to know and exactly what the output must contain. If you want only filenames, say `Return only the filenames.` If you want JSON, say `Return valid JSON only.` Do not ask vague questions.
 
@@ -317,12 +317,12 @@ Good:
 
 Examples:
 
-- `bun test 2>&1 | distill "Did the tests pass? Return only: PASS or FAIL, followed by failing test names if any."`
-- `git diff 2>&1 | distill "What changed? Return only the files changed and a one-line summary for each file."`
-- `terraform plan 2>&1 | distill "Is this safe? Return only: SAFE, REVIEW, or UNSAFE, followed by the exact risky changes."`
-- `npm audit 2>&1 | distill "Extract the vulnerabilities. Return valid JSON only."`
-- `rg -n "TODO|FIXME" . 2>&1 | distill "List files containing TODO or FIXME. Return only file paths, one per line."`
-- `ls -la 2>&1 | distill "Which files are shown? Return only the filenames."`
+- Do not send test output to `distill`; use the original exit code and required raw failures.
+- Do not send diffs to `distill` before review; inspect the actual diff, then compress only the final report.
+- Do not use a `distill` summary as the safety judgment for an infrastructure plan.
+- Do not use a `distill` summary as the primary vulnerability evidence.
+- Use context-mode to filter large searches and return only the needed matches.
+- Observe guaranteed-small listings directly instead of adding a second summarization step.
 
 You may skip `distill` only in these cases:
 

@@ -10,8 +10,7 @@ elif isinstance(prompt, str) and "hook" in prompt.lower():
     emit_additional_context(
         "UserPromptSubmit",
         (
-            "When changing Codex hooks, keep behavior repo-scoped unless the user "
-            "explicitly asks for global or plugin-level rollout. Prefer context-mode "
-            "for large input handling and reserve distill for final user-facing compression."
+            "Keep Codex hooks repo-scoped unless global rollout is explicit; use "
+            "context-mode for large inputs."
         ),
     )
