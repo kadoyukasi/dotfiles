@@ -17,14 +17,23 @@ alias git-cleanup-branches='
   done
 '
 
+_git-vscode-patch() {
+  local git_command="$1"
+  shift
+  local patch_dir patch_file result
+  patch_dir="$(mktemp -d)" || return
+  patch_file="$patch_dir/$git_command.patch"
+  git "$git_command" "$@" > "$patch_file" && code --wait "$patch_file"
+  result=$?
+  rm -f -- "$patch_file"
+  rmdir -- "$patch_dir"
+  return "$result"
+}
+
 git-vscode-diff() {
-  local patch_file="/tmp/git-diff-$$.patch"
-  git diff "$@" > "$patch_file"
-  code "$patch_file"
+  _git-vscode-patch diff "$@"
 }
 
 git-vscode-show() {
-  local patch_file="/tmp/git-show-$$.patch"
-  git show "$@" > "$patch_file"
-  code "$patch_file"
+  _git-vscode-patch show "$@"
 }

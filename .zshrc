@@ -43,17 +43,21 @@ zstyle ':completion:*:history-words' remove-all-dups yes
 [[ -r "$HOME/.rye/env" ]] && source "$HOME/.rye/env"
 
 # pnpm
-export PNPM_HOME="${PNPM_HOME:-$HOME/Library/pnpm}"
-case ":$PATH:" in
-  *":$PNPM_HOME:"*) ;;
-  *) export PATH="$PNPM_HOME:$PATH" ;;
-esac
+if [[ -z $PNPM_HOME && $OSTYPE == darwin* ]]; then
+  export PNPM_HOME="$HOME/Library/pnpm"
+fi
+if [[ -n $PNPM_HOME ]]; then
+  case ":$PATH:" in
+    *":$PNPM_HOME:"*) ;;
+    *) export PATH="$PNPM_HOME:$PATH" ;;
+  esac
+fi
 # pnpm end
 
 # pure prompt with clover
 export PURE_PROMPT_SYMBOL='🍀'
 
 # cache zshrc
-if [ ! -e $HOME/.zshrc.zwc -o $HOME/.zshrc -nt $HOME/.zshrc.zwc ]; then
-  zcompile $HOME/.zshrc
+if [[ ! -e "$HOME/.zshrc.zwc" || "$HOME/.zshrc" -nt "$HOME/.zshrc.zwc" ]]; then
+  zcompile "$HOME/.zshrc"
 fi

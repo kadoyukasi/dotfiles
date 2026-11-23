@@ -28,3 +28,6 @@ Temporary Items
 # Agents
 .copilot/**/*.lock
 .agents/.skill-lock.json
+
+# Machine-local Git configuration
+/.gitconfig.local

@@ -34,58 +34,26 @@ case "$OS_TYPE" in
         ;;
 esac
 
-should_unlink_item() {
-    local item="$1"
-    if [ "$item" = "Scoopfile" ]; then
-        return 1
-    fi
-
-    return 0
-}
-
 remove_link() {
-    local source="$1"
-    local target="$2"
-    local link_source
-    if [ -L "$target" ]; then
-        link_source="$(readlink "$target")"
-        if [ "$link_source" = "$source" ]; then
-            rm "$target"
-            echo "Removed $target."
-        else
-            echo "$target points outside this dotfiles clone. Skipping."
-        fi
-    else
-        echo "No symlink found for $target. Skipping."
+    local mode="$1" source="$2" target="$3"
+    if [ "$mode" = link ] && ! has_linked_parent "$target" &&
+       [ -L "$target" ] && [ "$(readlink "$target")" = "$source" ]; then
+        rm "$target"
+        echo "Removed $target."
     fi
 }
 
-# Remove dotfile links from home directory
 source "$DOTFILES_DIR/install_targets.sh"
-for item in "${INSTALL_TARGETS[@]}"; do
-    if ! should_unlink_item "$item"; then
-        continue
-    fi
+visit_dotfiles remove_link
 
-    source_path="$DOTFILES_DIR/$item"
-    target="$HOME/$item"
-    remove_link "$source_path" "$target"
-done
-echo "Dotfiles have been uninstalled."
-
-# Remove global hooksPath if it points to this repository
-CURRENT_HOOKS_PATH="$(git config --file "$GIT_LOCAL_CONFIG" --get core.hooksPath 2>/dev/null || true)"
-CURRENT_HOOKS_DIR=""
-if [ -n "$CURRENT_HOOKS_PATH" ] && [ -d "$CURRENT_HOOKS_PATH" ]; then
-    CURRENT_HOOKS_DIR="$(cd "$CURRENT_HOOKS_PATH" && pwd -P)"
-fi
-
-if [ "$CURRENT_HOOKS_DIR" = "$DOTFILES_DIR/.githooks" ]; then
+if [ -f "$GIT_LOCAL_CONFIG" ] && [ ! -L "$GIT_LOCAL_CONFIG" ] &&
+   [ "$(git config --file "$GIT_LOCAL_CONFIG" --get-all core.hooksPath || true)" = "$DOTFILES_DIR/.githooks" ]; then
     git config --file "$GIT_LOCAL_CONFIG" --unset core.hooksPath
     echo "Unset global git hooks path ($DOTFILES_DIR/.githooks)."
 fi
 
-if git -C "$DOTFILES_DIR" rev-parse --git-dir >/dev/null 2>&1; then
-    git -C "$DOTFILES_DIR" config --remove-section filter.codex-config 2>/dev/null || true
+if [ -e "$DOTFILES_DIR/.git" ] &&
+   [ "$(git -C "$DOTFILES_DIR" config --local --get filter.codex-config.clean || true)" = .githooks/clean-codex-config ]; then
+    git -C "$DOTFILES_DIR" config --local --remove-section filter.codex-config
     echo "Removed the repository-local Codex config filter."
 fi

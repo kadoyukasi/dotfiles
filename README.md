@@ -1,6 +1,6 @@
 # dotfiles
 
-This repository manages home directory configuration files by creating symbolic links from this repository into `$HOME`.
+Windows と macOS で設定を共有します。共有ファイルのリンク先と初期コピーの対象は `install_targets.txt` で管理します。認証情報やアプリが書き換える状態は、各端末の設定ディレクトリで管理します。
 
 ## Platform support
 
@@ -8,6 +8,8 @@ Use shell scripts by platform:
 
 - macOS: run `./install.sh` and `./uninstall.sh`
 - Windows (PowerShell): run `./install.ps1` and `./uninstall.ps1`
+
+設定だけを導入する場合は、macOS で `./install.sh --no-packages`、Windows で `pwsh -File .\install.ps1 -NoPackages` を実行します。既存ファイルはそのまま使い、アンインストール時はこのクローンを指すファイルリンクを解除します。初期コピー、認証情報、個別設定、親ディレクトリはアンインストール後も利用できます。
 
 Package manager by platform:
 
@@ -42,28 +44,19 @@ pwsh -File .\install.ps1
 
 > Note: If elevation is required, open an Administrator session directly. Do not use `sudo` here because its separate elevated process can hide the installer's output.
 
+## 旧インストールからの移行
+
+旧版で作られたディレクトリリンクを検出すると、配下のファイルをスキップします。移行する場合はアプリを閉じ、`~/.codex`、`~/.config`、`~/.ssh`、`~/.copilot`、`~/.zsh` のうち、クローンを指すリンクを確認します。リンク先に保存されたローカルファイルをリポジトリの外にバックアップしてから、リンクを別名に退避し、実ディレクトリを作成してください。そこへ必要な認証情報、SSH 鍵、`known_hosts`、アプリ設定を戻します。`~/.gitconfig` も旧版のリンクなら退避してからインストーラーを再実行します。既存の設定ファイルには必要な共有設定を手動で反映します。
+
 ## Codex settings
 
-Codex user settings are managed in `.codex/` in this repository.
-
-Platform install scripts link `.codex` to `$HOME/.codex` when it does not already exist.
-
-The `code` and `full` profiles start Serena through `uvx` with Python 3.13. The package manifests install `uv`; on first startup, `uvx` may download Python and Serena dependencies, so the MCP startup timeout is set to 60 seconds. Run `/mcp` in Codex to verify that `serena` is connected.
-
-If `$HOME/.codex` already exists and you want to migrate this machine to dotfiles-managed mode, back it up first and then relink:
-
-```bash
-mv ~/.codex ~/.codex.backup.$(date +%Y%m%d-%H%M%S)
-./install.sh
-```
-
-`.codex/.gitignore` tracks the managed configuration, hooks, rules, and custom skills while ignoring runtime/generated files.
+インストーラーは `$CODEX_HOME`（未指定時は `~/.codex`）に共有の指示、ルール、スキル、プロファイルをファイル単位でリンクし、`config.toml` がない場合だけ初期コピーを作ります。共有側の更新は端末の `config.toml` に必要な項目を反映してください。プロジェクトの信頼設定、フックの承認、デスクトップのランタイムやプラグインのパスは各端末で設定します。
 
 The default Codex configuration favors lower token use:
 
 - `gpt-5.6-sol` with `model_reasoning_effort = "low"`
 - `model_verbosity = "low"`
-- `context-mode` enabled for large-input processing
+- 大量入力には `context-mode` を有効化。新しい端末ではプラグインを端末側にもインストールしてください。
 - optional plugins and Serena disabled until a matching CLI profile is selected
 
 Codex 0.134 and later loads profiles from separate files in `~/.codex/`. The managed profiles are:
@@ -79,12 +72,11 @@ For example, run `codex --profile code` for repository work or `codex --profile 
 
 Global communication and safety defaults live in `.codex/AGENTS.md`. Repository-specific invariants live in the root `AGENTS.md`, avoiding repeated or conflicting instructions.
 
-Codex writes machine-generated sections such as `[projects."<absolute-path>"]`, `[hooks.state]`, marketplace revision metadata, and machine-local command/environment values into the user config after project or hook approval. They contain host-specific paths or local approval/cache state.
+`code` と `full` プロファイルは、各端末の `PATH` にある `uvx` から Python 3.13 で Serena を起動します。パッケージ一覧には `uv` が含まれます。初回は Python や依存関係を取得する場合があり、MCP の起動タイムアウトは60秒です。接続状態は Codex の `/mcp` で確認できます。
 
-The install scripts configure a repository-local Git clean filter for `.codex/config.toml`. Machine-local sections and known path-bearing assignments remain available to Codex in the working tree, but `git diff`, staging, and commits see only the portable settings. The pre-commit hook rejects these sections if the filter is missing or bypassed. The uninstall scripts remove the repository-local filter configuration.
+インストーラーは、このクローンの `.codex/config.toml` 用にリポジトリローカルの Git clean フィルターも登録します。フィルターは、プロジェクトの信頼設定、フックの承認状態、マーケットプレイス情報と一部の端末固有パスをステージ時に除きます。pre-commit フックでもステージ済みの設定を検査します。アンインストール時に、このフィルターの登録を解除します。
 
-This repository also includes project-scoped Codex hooks in `.codex/hooks.json`. Because `.codex` is linked into the user configuration directory, Codex discovers the hook definitions from every working directory. The hook dispatcher resolves the managed dotfiles clone and exits successfully unless Codex is running inside that clone, so unrelated repositories never execute dotfiles-specific hook code.
-
+This repository includes project-scoped Codex hooks in `.codex/hooks.json`. The dispatcher runs them only inside the dotfiles checkout.
 
 The hooks are repo-local and currently do four things:
 
@@ -112,31 +104,43 @@ Do not pipe tests, builds, lint, diffs, security checks, or infrastructure plans
 
 Global Copilot user instructions are managed in `.copilot/instructions/global.instructions.md`.
 
-Running the platform install script will link that directory to `$HOME/.copilot/instructions/`, which is the VS Code-supported user-level location for instructions that can apply across workspaces.
+Running the platform install script will link this file into `$HOME/.copilot/instructions/`, which is the VS Code-supported user-level location for instructions that can apply across workspaces.
 
 ## Updating instructions
 
-Edit `.copilot/instructions/global.instructions.md` in this repository, then rerun the platform install script on any machine where you want the symlink refreshed.
+Edit `.copilot/instructions/global.instructions.md` in the local clone. An installed link picks up changes to its target.
 
 Repository-specific instructions should still live in each repository under `.github/copilot-instructions.md` when needed.
 
 ## Secret leak prevention
+
+Git の `~/.gitconfig` は初回だけコピーします。ユーザー名、メール、署名鍵は各端末の `~/.gitconfig.local` に設定します。
+
+```sh
+git config --file "$HOME/.gitconfig.local" user.name "Your Name"
+git config --file "$HOME/.gitconfig.local" user.email "you@example.com"
+```
+
+SSH 署名を使う場合は、同じファイルに `gpg.format = ssh` と `user.signingkey` を設定します。SSH 接続に標準名以外の鍵を使う場合は、`~/.ssh/config.local` の対象ホストに `IdentityFile` と必要に応じて `IdentitiesOnly yes` を設定します。SSH 鍵と `known_hosts` は `~/.ssh/` で管理します。
+
+GitHub CLI の `config.yml` は `GH_CONFIG_DIR`、`XDG_CONFIG_HOME/gh`、Windows の `APPDATA/GitHub CLI`、`~/.config/gh` の順に保存先を選び、初回だけコピーします。ログインは各端末で `gh auth login` を実行します。その他の `.config/` 配下の管理ファイルは `XDG_CONFIG_HOME`（未指定時は `~/.config`）を使います。PowerShell のプロンプト設定は既存の `STARSHIP_CONFIG` を優先します。
 
 This repository includes a pre-commit hook at `.githooks/pre-commit` to reduce accidental commits of sensitive data.
 
 It checks staged files for:
 
 - Sensitive filenames/path patterns (e.g. `auth.json`, `.env*`, private key files, sqlite/db artifacts)
-- High-signal secret patterns in content (private keys, common API token formats, password/token-like assignments)
+- High-signal secret patterns in content (private keys, common API token formats, password/token-like assignments). Diagnostics report the path.
 - Machine-local home paths for macOS, Linux, and Windows in staged content
 
-Run the platform install script (`./install.sh` on macOS, `./install.ps1` on Windows PowerShell) to configure **global** `core.hooksPath` to this clone's `.githooks` directory.
+インストーラーは、このクローンの `.githooks` を `~/.gitconfig.local` の `core.hooksPath` に登録します。既存の別のフック設定があれば維持します。共有の `.gitconfig` はローカル設定を読み込みます。独自のグローバル設定を使っていてインストーラーがフックの未適用を報告した場合は、その設定に次の読み込みを追加してください。
 
-The tracked `.gitconfig` includes `~/.gitconfig.local`. The install scripts write the machine-specific hooks path to that untracked local file, so moving or cloning this repository on another machine does not modify the tracked dotfiles. The uninstall scripts remove the value only when it still points to the current clone.
+```sh
+git config --global --add include.path '~/.gitconfig.local'
+git config --global --includes --get core.hooksPath
+```
 
-The uninstall scripts also remove only symbolic links that still point into the current clone. Links repointed to another dotfiles clone or user-managed target are preserved.
-
-That means the hook is applied to all Git repositories on this machine, unless a repository overrides `core.hooksPath` locally. Git for Windows runs `.githooks/pre-commit` through its bundled Bash; macOS uses the script's Bash shebang.
+フックは端末の全 Git リポジトリに適用されます。リポジトリ単位の `core.hooksPath` がある場合はそちらが優先されます。Windows では Git for Windows の Bash、macOS ではスクリプトの shebang を使います。アンインストーラーは、`~/.gitconfig.local` の値がこのクローンを指す場合に解除します。
 
 `.gitattributes` forces LF endings for shell scripts and Git hooks so a Windows checkout remains executable by Git Bash and macOS Bash.
 

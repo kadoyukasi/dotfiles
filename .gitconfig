@@ -1,24 +1,14 @@
-[user]
-  name = kadoyukasi
-  email = 63542479+kadoyukasi@users.noreply.github.com
-  signingkey = ~/.ssh/id_git_sign
 [core]
   excludesfile = ~/.gitignore
   autoCRLF = false
   editor = code --wait
-  filemode = false
   quotepath = false
-  ignorecase = false
-[include]
-  path = ~/.gitconfig.local
 [push]
   default = simple
 [pull]
   rebase = merges
 [merge]
   ff = false
-[gpg]
-  format = ssh
 [alias]
   ad = add
   br = branch
@@ -28,5 +18,7 @@
   l = log --oneline
   lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative
   lga = log --graph --all --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative
-  sh = "!f() { git show \"$@\" > /tmp/git-show.patch && code /tmp/git-show.patch; }; f"
-  di = "!f() { git diff \"$@\" > /tmp/git-diff.patch && code /tmp/git-diff.patch; }; f"
+  sh = "!f() { d=$(mktemp -d) || return; git show \"$@\" > \"$d/show.patch\" && code --wait \"$d/show.patch\"; status=$?; rm -f -- \"$d/show.patch\"; rmdir -- \"$d\"; return \"$status\"; }; f"
+  di = "!f() { d=$(mktemp -d) || return; git diff \"$@\" > \"$d/diff.patch\" && code --wait \"$d/diff.patch\"; status=$?; rm -f -- \"$d/diff.patch\"; rmdir -- \"$d\"; return \"$status\"; }; f"
+[include]
+  path = ~/.gitconfig.local

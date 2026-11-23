@@ -17,7 +17,7 @@ def read(path: str) -> str:
 
 def clean_codex_config(config: str | None = None) -> str:
     result = subprocess.run(
-        [str(ROOT / ".githooks/clean-codex-config")],
+        ["bash", str(ROOT / ".githooks/clean-codex-config")],
         input=read(".codex/config.toml") if config is None else config,
         text=True,
         capture_output=True,
@@ -149,7 +149,7 @@ def test_pre_commit_blocks_machine_local_home_paths() -> None:
             (repo / f"leak-{index}.txt").write_text(machine_path, encoding="utf-8")
         subprocess.run(["git", "add", "."], cwd=repo, check=True)
         result = subprocess.run(
-            [str(hook)], cwd=repo, text=True, capture_output=True, check=False
+            ["bash", str(hook)], cwd=repo, text=True, capture_output=True, check=False
         )
 
     assert result.returncode == 1

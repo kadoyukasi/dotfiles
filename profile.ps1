@@ -3,9 +3,9 @@
 Import-Module PSReadLine -ErrorAction SilentlyContinue
 
 # uv tools (serena, etc.)
-$UvToolsBin = Join-Path $env:USERPROFILE ".local\bin"
+$UvToolsBin = Join-Path $HOME ".local/bin"
 if (Test-Path $UvToolsBin) {
-    $env:PATH = "$UvToolsBin;$env:PATH"
+    $env:PATH = "$UvToolsBin$([IO.Path]::PathSeparator)$env:PATH"
 }
 
 Set-PSReadLineOption -EditMode Emacs
@@ -46,13 +46,9 @@ if (Get-Command zoxide -ErrorAction SilentlyContinue) {
 }
 
 # starship: cross-platform prompt (mirrors pure prompt on macOS)
-# Explicitly resolve config path via symlink target so it works even when
-# $HOME/.config already existed and the directory symlink was skipped by install.ps1.
 if (-not $env:STARSHIP_CONFIG) {
-    $ProfileItem = Get-Item -LiteralPath $PROFILE -ErrorAction SilentlyContinue
-    $ProfileTarget = if ($ProfileItem -and $ProfileItem.LinkType) { $ProfileItem.Target } else { $PROFILE }
-    $DotfilesDir = Split-Path -Parent $ProfileTarget
-    $CandidateConfig = Join-Path $DotfilesDir ".config\starship.toml"
+    $ConfigDir = if ($env:XDG_CONFIG_HOME) { $env:XDG_CONFIG_HOME } else { Join-Path $HOME ".config" }
+    $CandidateConfig = Join-Path $ConfigDir "starship.toml"
     if (Test-Path -LiteralPath $CandidateConfig) {
         $env:STARSHIP_CONFIG = $CandidateConfig
     }

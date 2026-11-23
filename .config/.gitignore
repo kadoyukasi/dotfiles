@@ -1,1 +1,18 @@
-iterm2
+# Keep local application state in the home directory.
+*
+!.gitignore
+!distill/
+!distill/config.json
+!distill/dsl/
+!distill/dsl/global.json
+!distill/logs/
+!distill/logs/.gitignore
+!gh/
+!gh/config.yml
+!mise/
+!mise/config.toml
+!sheldon/
+!sheldon/plugins.toml
+!starship.toml
+!zsh-abbr/
+!zsh-abbr/user-abbreviations

@@ -1,3 +1,5 @@
+param([switch]$NoPackages)
+
 $ErrorActionPreference = "Stop"
 
 $DotfilesDir = $PSScriptRoot
@@ -15,29 +17,18 @@ if (-not $IsAdmin) {
     Write-Host "Running without administrator privileges. Symbolic links require Windows Developer Mode or the Create symbolic links user right."
 }
 
-$InstallTargets = @(
-    ".config",
-    ".codex",
-    ".copilot",
-    ".ssh",
-    ".zsh",
-    ".bc",
-    ".editorconfig",
-    ".gitconfig",
-    ".gitignore",
-    ".zshenv",
-    ".zshrc",
-    "Scoopfile"
-)
+. (Join-Path $DotfilesDir "install_targets.ps1")
 
-$LinkErrors = [System.Collections.Generic.List[string]]::new()
+$InstallErrors = [System.Collections.Generic.List[string]]::new()
 
-function Link-File {
+function Install-Dotfile {
     param(
+        [Parameter(Mandatory = $true)][string]$Mode,
         [Parameter(Mandatory = $true)][string]$Source,
         [Parameter(Mandatory = $true)][string]$Target
     )
 
+    if (Test-LinkedParent $Target) { return }
     $ExistingItem = Get-Item -LiteralPath $Target -Force -ErrorAction SilentlyContinue
     if ($null -ne $ExistingItem) {
         Write-Host "File $Target already exists in home directory. Skipping."
@@ -45,12 +36,44 @@ function Link-File {
     }
 
     try {
-        New-Item -ItemType SymbolicLink -Path $Target -Target $Source | Out-Null
-        Write-Host "Linked $Source to home directory."
+        [IO.Directory]::CreateDirectory((Split-Path -Parent $Target)) | Out-Null
+        if ($Mode -eq "copy") {
+            [IO.File]::Copy($Source, $Target)
+            Write-Host "Initialized $Target."
+        }
+        else {
+            New-Item -ItemType SymbolicLink -Path $Target -Target $Source | Out-Null
+            Write-Host "Linked $Source to home directory."
+        }
     }
     catch {
-        Write-Host "ERROR: Failed to link $Source -> $Target : $($_.Exception.Message)"
-        $script:LinkErrors.Add($Target)
+        Write-Host "ERROR: Failed to install $Source -> $Target : $($_.Exception.Message)"
+        $script:InstallErrors.Add($Target)
+    }
+}
+
+function Install-GlobalHook {
+    $LocalConfig = Get-Item -LiteralPath $GitLocalConfig -Force -ErrorAction SilentlyContinue
+    if ($LocalConfig.LinkType) {
+        Write-Warning "Leaving linked $GitLocalConfig untouched."
+        return
+    }
+
+    $GlobalPath = git config --global --includes --get core.hooksPath
+    $LocalPath = @(git config --file $GitLocalConfig --get-all core.hooksPath)
+    if (($GlobalPath -and $GlobalPath -ne $HooksPath) -or
+        ($LocalPath.Count -gt 0 -and ($LocalPath.Count -ne 1 -or $LocalPath[0] -ne $HooksPath))) {
+        Write-Warning "Leaving existing core.hooksPath unchanged."
+        return
+    }
+
+    git config --file $GitLocalConfig core.hooksPath $HooksPath
+    if ($LASTEXITCODE -ne 0) { throw "Failed to set core.hooksPath in $GitLocalConfig." }
+    if ((git config --global --includes --get core.hooksPath) -eq $HooksPath) {
+        Write-Host "Global Git hooks enabled via $GitLocalConfig."
+    }
+    else {
+        Write-Warning "Global Git hooks are inactive. Include ~/.gitconfig.local in your global Git config."
     }
 }
 
@@ -67,44 +90,28 @@ function Invoke-Scoop {
 }
 
 try {
-    foreach ($Item in $InstallTargets) {
-        $SourcePath = Join-Path $DotfilesDir $Item
-        $TargetPath = Join-Path $HOME $Item
-
-        if (Test-Path -LiteralPath $SourcePath) {
-            Link-File -Source $SourcePath -Target $TargetPath
-        }
-        else {
-            Write-Host "File or directory $Item not found in dotfiles directory. Skipping."
-        }
+    foreach ($Item in Get-DotfileTargets) {
+        Install-Dotfile -Mode $Item.Mode -Source $Item.Source -Target $Item.Target
     }
 
-    # Link PowerShell profile (target path differs from simple $HOME/<name> pattern)
-    $ProfileSource = Join-Path $DotfilesDir "profile.ps1"
-    if (Test-Path -LiteralPath $ProfileSource) {
-        $ProfileDir = Split-Path -Parent $PROFILE
-        if (-not (Test-Path -LiteralPath $ProfileDir)) {
-            New-Item -ItemType Directory -Path $ProfileDir -Force | Out-Null
-        }
-        Link-File -Source $ProfileSource -Target $PROFILE
-    }
-
-    if ($LinkErrors.Count -gt 0) {
-        Write-Host "WARNING: $($LinkErrors.Count) symlink(s) failed to create:"
-        $LinkErrors | ForEach-Object { Write-Host "  - $_" }
-        Write-Host "Hint: enable Windows Developer Mode or rerun this script from an Administrator PowerShell session."
+    if ($InstallErrors.Count -gt 0) {
+        Write-Host "WARNING: $($InstallErrors.Count) file(s) failed to install:"
+        $InstallErrors | ForEach-Object { Write-Host "  - $_" }
+        Write-Host "Hint: enable Windows Developer Mode or use an Administrator PowerShell session if linking was denied."
         exit 1
     }
 
-    Write-Host "Dotfiles have been linked to your home directory."
-
-    git config --file $GitLocalConfig core.hooksPath $HooksPath
-    Write-Host "Global git hooks path has been set to $HooksPath via $GitLocalConfig."
-
-    git -C $DotfilesDir config filter.codex-config.clean .githooks/clean-codex-config
-    git -C $DotfilesDir config filter.codex-config.smudge cat
-    git -C $DotfilesDir config filter.codex-config.required true
-    Write-Host "Codex machine-local config state will be excluded from Git blobs."
+    Install-GlobalHook
+    if (Test-Path -LiteralPath (Join-Path $DotfilesDir ".git")) {
+        git -C $DotfilesDir config --local filter.codex-config.clean .githooks/clean-codex-config
+        if ($LASTEXITCODE -ne 0) { throw "Failed to configure the Codex clean filter." }
+        git -C $DotfilesDir config --local filter.codex-config.smudge cat
+        if ($LASTEXITCODE -ne 0) { throw "Failed to configure the Codex smudge filter." }
+        git -C $DotfilesDir config --local filter.codex-config.required true
+        if ($LASTEXITCODE -ne 0) { throw "Failed to require the Codex config filter." }
+        Write-Host "Enabled the repository-local Codex config filter."
+    }
+    if ($NoPackages) { exit 0 }
 
     $Scoop = Get-Command scoop -ErrorAction SilentlyContinue
     if (-not $Scoop) {

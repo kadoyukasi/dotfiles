@@ -10,20 +10,7 @@ if (-not $IsWindowsHost) {
     exit 0
 }
 
-$InstallTargets = @(
-    ".config",
-    ".codex",
-    ".copilot",
-    ".ssh",
-    ".zsh",
-    ".bc",
-    ".editorconfig",
-    ".gitconfig",
-    ".gitignore",
-    ".zshenv",
-    ".zshrc",
-    "Scoopfile"
-)
+. (Join-Path $DotfilesDir "install_targets.ps1")
 
 function Remove-Link {
     param(
@@ -31,15 +18,9 @@ function Remove-Link {
         [Parameter(Mandatory = $true)][string]$Target
     )
 
+    if (Test-LinkedParent $Target) { return }
     $Item = Get-Item -LiteralPath $Target -Force -ErrorAction SilentlyContinue
-    if ($null -eq $Item) {
-        Write-Host "No symlink found for $Target. Skipping."
-        return
-    }
-
-    $IsReparsePoint = ($Item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0
-
-    if ($IsReparsePoint) {
+    if ($Item.LinkType -eq "SymbolicLink") {
         $LinkTarget = @($Item.Target)[0]
         if ([string]::IsNullOrWhiteSpace($LinkTarget)) {
             Write-Host "$Target has no readable symlink target. Skipping."
@@ -60,32 +41,30 @@ function Remove-Link {
             Write-Host "$Target points outside this dotfiles clone. Skipping."
         }
     }
-    else {
-        Write-Host "$Target is not a symlink. Skipping."
+}
+
+foreach ($Item in Get-DotfileTargets) {
+    if ($Item.Mode -eq "link") {
+        Remove-Link -Source $Item.Source -Target $Item.Target
     }
 }
 
-foreach ($Item in $InstallTargets) {
-    $SourcePath = Join-Path $DotfilesDir $Item
-    $TargetPath = Join-Path $HOME $Item
-    Remove-Link -Source $SourcePath -Target $TargetPath
+$LocalConfig = Get-Item -LiteralPath $GitLocalConfig -Force -ErrorAction SilentlyContinue
+if ($LocalConfig -and -not $LocalConfig.LinkType) {
+    $CurrentHooksPath = @(git config --file $GitLocalConfig --get-all core.hooksPath)
+    if ($CurrentHooksPath.Count -eq 1 -and
+        $CurrentHooksPath[0].Replace('\', '/').TrimEnd('/') -eq $HooksPath.TrimEnd('/')) {
+        git config --file $GitLocalConfig --unset core.hooksPath
+        if ($LASTEXITCODE -ne 0) { throw "Failed to unset core.hooksPath in $GitLocalConfig." }
+        Write-Host "Unset global Git hooks from $GitLocalConfig."
+    }
 }
 
-# Remove PowerShell profile symlink
-$ProfileSource = Join-Path $DotfilesDir "profile.ps1"
-Remove-Link -Source $ProfileSource -Target $PROFILE
-
-Write-Host "Dotfiles have been uninstalled."
-
-$CurrentHooksPath = git config --file $GitLocalConfig --get core.hooksPath 2>$null
-$NormalizedCurrentHooksPath = "$CurrentHooksPath".Replace('\', '/').TrimEnd('/')
-$NormalizedHooksPath = $HooksPath.TrimEnd('/')
-if ([string]::Equals($NormalizedCurrentHooksPath, $NormalizedHooksPath, [System.StringComparison]::OrdinalIgnoreCase)) {
-    git config --file $GitLocalConfig --unset core.hooksPath
-    Write-Host "Unset global git hooks path ($HooksPath) from $GitLocalConfig."
-}
-
-git -C $DotfilesDir config --remove-section filter.codex-config 2>$null
-if ($LASTEXITCODE -eq 0) {
-    Write-Host "Removed the repository-local Codex config filter."
+if (Test-Path -LiteralPath (Join-Path $DotfilesDir ".git")) {
+    $Filter = git -C $DotfilesDir config --local --get filter.codex-config.clean
+    if ($Filter -eq ".githooks/clean-codex-config") {
+        git -C $DotfilesDir config --local --remove-section filter.codex-config
+        if ($LASTEXITCODE -ne 0) { throw "Failed to remove the Codex config filter." }
+        Write-Host "Removed the repository-local Codex config filter."
+    }
 }
