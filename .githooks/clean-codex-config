@@ -16,8 +16,8 @@ function is_machine_state(line) {
 }
 
 function has_machine_home_path(line) {
-    return line ~ /\/(Users|home)\/[^\/]+\// || \
-        line ~ /[A-Za-z]:[\\\/]Users[\\\/][^\\\/]+[\\\/]/
+    return line ~ /\/(Users|home)\/[^\/[:cntrl:]"<>]+\// || \
+        line ~ /[A-Za-z]:[\\\/]+Users[\\\/]+[^\\\/[:cntrl:]"<>]+[\\\/]+/
 }
 
 function is_machine_assignment(line) {

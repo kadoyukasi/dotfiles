@@ -77,7 +77,7 @@ def test_codex_config_has_no_machine_generated_state() -> None:
 
 def test_codex_config_clean_filter_removes_only_machine_state() -> None:
     machine_home = "/" + "Users/example"
-    windows_home = "C:" + "\\Users\\example"
+    windows_home = "C:" + r"\\Users\\Example Name"
     sample = f"""model = \"gpt-5.6\"
 notify = [\"{machine_home}/bin/notifier\"]
 
@@ -96,7 +96,7 @@ revision = \"local-cache\"
 hooks = true
 
 [mcp_servers.node_repl.env]
-CODEX_HOME = '{windows_home}\\.codex'
+CODEX_HOME = "{windows_home}\\\\.codex"
 NODE_REPL_TRUSTED_CODE_PATHS = \"{machine_home}/.codex\"
 PORTABLE_VALUE = \"kept\"
 """
@@ -138,7 +138,9 @@ def test_pre_commit_blocks_machine_local_home_paths() -> None:
     machine_paths = (
         "/" + "Users/example/work/cache",
         "/" + "home/example/work/cache",
-        "C:" + "\\Users\\example\\work\\cache",
+        "C:" + r"\Users\example\work\cache",
+        "C:" + r"\\Users\\Example Name\\work\\cache",
+        "/" + "Users/例 子/work/cache",
     )
     with tempfile.TemporaryDirectory() as directory:
         repo = Path(directory)

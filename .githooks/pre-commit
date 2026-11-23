@@ -46,9 +46,8 @@ SENSITIVE_CONTENT_PATTERN=$(printf '%s|' "${SENSITIVE_CONTENT_PATTERNS[@]}")
 SENSITIVE_CONTENT_PATTERN="${SENSITIVE_CONTENT_PATTERN%|}"
 
 MACHINE_LOCAL_PATH_PATTERNS=(
-    "/Users/[A-Za-z0-9._-]+/"
-    "/home/[A-Za-z0-9._-]+/"
-    "[A-Za-z]:[\\\\/]Users[\\\\/][A-Za-z0-9._-]+[\\\\/]"
+    '/(Users|home)/[^/[:cntrl:]"<>]+/'
+    '[A-Za-z]:[\\/]+Users[\\/]+[^\\/[:cntrl:]"<>]+[\\/]+'
 )
 MACHINE_LOCAL_PATH_PATTERN=$(printf '%s|' "${MACHINE_LOCAL_PATH_PATTERNS[@]}")
 MACHINE_LOCAL_PATH_PATTERN="${MACHINE_LOCAL_PATH_PATTERN%|}"

@@ -149,7 +149,7 @@ It checks staged files for:
 
 - Sensitive filenames/path patterns (e.g. `auth.json`, `.env*`, private key files, sqlite/db artifacts)
 - High-signal secret patterns in content (private keys, common API token formats, password/token-like assignments). Diagnostics report the path.
-- Machine-local home paths for macOS, Linux, and Windows in staged content
+- Machine-local home paths for macOS, Linux, and Windows in staged content, including Windows paths escaped in configuration files
 
 インストーラーは、このクローンの `.githooks` を `~/.gitconfig.local` の `core.hooksPath` に登録します。既存の別のフック設定があれば維持します。共有の `.gitconfig` はローカル設定を読み込みます。独自のグローバル設定を使っていてインストーラーがフックの未適用を報告した場合は、その設定に次の読み込みを追加してください。
 
