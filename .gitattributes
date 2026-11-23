@@ -4,3 +4,7 @@
 *.json text eol=lf
 *.toml text eol=lf
 .codex/config.toml filter=codex-config
+*.zsh text eol=lf
+/.zshenv text eol=lf
+/.zshrc text eol=lf
+/install_targets.txt text eol=lf

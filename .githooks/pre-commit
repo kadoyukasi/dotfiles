@@ -2,19 +2,24 @@
 
 set -euo pipefail
 
-# Scan staged content to prevent accidental secret commits.
-STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMRT)
+TMPDIR_CHECK="$(mktemp -d)"
+trap 'rm -f "$TMPDIR_CHECK/index" "$TMPDIR_CHECK/blob" "$TMPDIR_CHECK/filtered"; rmdir "$TMPDIR_CHECK"' EXIT
 
-if [ -z "$STAGED_FILES" ]; then
+# Keep paths NUL-delimited and read blobs by object ID from the staged diff.
+git diff --cached --raw -z --no-abbrev --no-renames --no-ext-diff --diff-filter=AMT -- > "$TMPDIR_CHECK/index"
+if [ ! -s "$TMPDIR_CHECK/index" ]; then
     echo "[secret-check] skipped: no staged files"
     exit 0
 fi
 
-FILE_COUNT=$(echo "$STAGED_FILES" | wc -l | tr -d ' ')
-echo "[secret-check] scanning $FILE_COUNT staged file(s)..."
+echo "[secret-check] scanning staged files..."
 
 SENSITIVE_PATH_PATTERNS=(
     '(^|/)auth\.json$'
+    '(^|/)\.config/gh/hosts\.yml$'
+    '(^|/)\.codex/config\.local\.toml$'
+    '(^|/)\.gitconfig\.local$'
+    '(^|/)\.ssh/config\.local$'
     '(^|/)\.env(\.|$)'
     '(^|/)id_(rsa|dsa|ecdsa|ed25519)$'
     '\.pem$'
@@ -26,14 +31,15 @@ SENSITIVE_PATH_PATTERNS=(
 )
 
 SENSITIVE_CONTENT_PATTERNS=(
-    '-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----'
-    'AKIA[0-9A-Z]{16}'
-    'ghp_[A-Za-z0-9]{36}'
+    '-----BEGIN ([A-Z0-9]+ )*PRIVATE KEY-----'
+    '(AKIA|ASIA)[0-9A-Z]{16}'
+    'gh[oprsu]_[A-Za-z0-9]{36,}'
     'github_pat_[A-Za-z0-9_]{82,}'
     'xox[baprs]-[A-Za-z0-9-]{10,}'
-    'AIza[0-9A-Za-z\\-_]{35}'
-    'sk_live_[0-9A-Za-z]{20,}'
-    '(api[_-]?key|access[_-]?token|secret|password)[[:space:]]*[:=][[:space:]]*["'"'"']?[A-Za-z0-9_./+\\=-]{12,}'
+    'AIza[0-9A-Za-z_-]{35}'
+    '(sk|rk)_live_[0-9A-Za-z]{20,}'
+    'sk-(proj-[A-Za-z0-9_-]{32,}|[A-Za-z0-9]{48})'
+    '(api[_-]?key|access[_-]?token|oauth[_-]?token|secret|password)["'"'"']?[[:space:]]*[:=][[:space:]]*["'"'"']?[A-Za-z0-9_./+=-]{12,}'
 )
 
 SENSITIVE_CONTENT_PATTERN=$(printf '%s|' "${SENSITIVE_CONTENT_PATTERNS[@]}")
@@ -53,17 +59,14 @@ IGNORE_FILE_NAMES=(
     '.secret-check-ignore'
     '.git-secret-check-ignore'
 )
-IGNORE_FILE_PATHS=()
-
-TMPFILE="$(mktemp)"
-trap 'rm -f "$TMPFILE"' EXIT
+IGNORE_FILE_PATHS=("")
 
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
 if [ -n "$repo_root" ]; then
     for ignore_filename in "${IGNORE_FILE_NAMES[@]}"; do
         ignore_path="$repo_root/$ignore_filename"
         if [ -f "$ignore_path" ]; then
-            while IFS= read -r line; do
+            while IFS= read -r line || [ -n "$line" ]; do
                 line="${line%%#*}"
                 line="$(printf '%s' "$line" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
                 [ -n "$line" ] && IGNORE_FILE_PATHS+=("$line")
@@ -74,43 +77,37 @@ fi
 
 violations=0
 
-while IFS= read -r path; do
-    [ -z "$path" ] && continue
+while IFS= read -r -d '' header && IFS= read -r -d '' path; do
+    read -r old_mode new_mode old_oid new_oid change <<< "$header"
+    [ "$new_mode" = 160000 ] && continue
 
     # Skip files matched by ignore file patterns.
-    if [ "${#IGNORE_FILE_PATHS[@]}" -gt 0 ]; then
-        for ignore_pattern in "${IGNORE_FILE_PATHS[@]}"; do
-            case "$path" in
-                $ignore_pattern)
-                    echo "[secret-check] ignored by ignore file: $path"
-                    continue 2
-                    ;;
-            esac
-        done
-    fi
+    for ignore_pattern in "${IGNORE_FILE_PATHS[@]}"; do
+        case "$path" in
+            $ignore_pattern)
+                printf '[secret-check] ignored by ignore file: %q\n' "$path"
+                continue 2
+                ;;
+        esac
+    done
 
     for pattern in "${SENSITIVE_PATH_PATTERNS[@]}"; do
-        if echo "$path" | grep -Eq -- "$pattern"; then
-            echo "[secret-check] blocked by filename/path pattern: $path"
+        if [[ "$path" =~ $pattern ]]; then
+            printf '[secret-check] blocked by filename/path pattern: %q\n' "$path"
             violations=1
             break
         fi
     done
 
-    # Read staged blob, not working tree file. Avoid storing null bytes in shell variables.
-    if ! git show ":$path" 2>/dev/null > "$TMPFILE"; then
-        continue
-    fi
-
-    if [ "$path" = ".codex/config.toml" ] && \
-        grep -a -E -n '^\[(projects\.|hooks\.state(\]|\.)|marketplaces\.)' "$TMPFILE" >/dev/null; then
-        echo "[secret-check] blocked machine-local Codex state in: $path"
-        echo "Run ./install.sh (macOS) or ./install.ps1 (Windows) to enable the clean filter."
+    git cat-file blob "$new_oid" > "$TMPDIR_CHECK/blob"
+    if [ "$path" = ".codex/config.toml" ] &&
+        grep -a -E '^[[:space:]]*\[(projects\.|hooks\.state(\]|\.)|marketplaces\.)' "$TMPDIR_CHECK/blob" >/dev/null; then
+        printf '[secret-check] blocked machine-local Codex state in: %q\n' "$path"
+        echo "Run the platform installer to enable the clean filter."
         violations=1
         continue
     fi
 
-    ignore_filtered="${TMPFILE}.filtered"
     ignore_next=0
     while IFS= read -r line || [ -n "$line" ]; do
         if [ "$ignore_next" -eq 1 ]; then
@@ -129,21 +126,24 @@ while IFS= read -r path; do
         esac
 
         printf '%s\n' "$line"
-    done < "$TMPFILE" > "$ignore_filtered"
-    mv "$ignore_filtered" "$TMPFILE"
+    done < "$TMPDIR_CHECK/blob" > "$TMPDIR_CHECK/filtered"
 
-    if grep -a -E -n -- "$MACHINE_LOCAL_PATH_PATTERN" "$TMPFILE" >/dev/null; then
-        echo "[secret-check] blocked machine-local home path in: $path"
-        grep -a -E -n -- "$MACHINE_LOCAL_PATH_PATTERN" "$TMPFILE" | head -n 3
+    if grep -a -E -i -- "$MACHINE_LOCAL_PATH_PATTERN" "$TMPDIR_CHECK/filtered" >/dev/null; then
+        printf '[secret-check] blocked machine-local home path in: %q\n' "$path"
         violations=1
+    elif [ "$?" -ne 1 ]; then
+        echo "[secret-check] failed to scan staged paths." >&2
+        exit 1
     fi
 
-    if grep -a -E -i -n -- "$SENSITIVE_CONTENT_PATTERN" "$TMPFILE" >/dev/null; then
-        echo "[secret-check] blocked by content pattern in: $path"
-        grep -a -E -i -n -- "$SENSITIVE_CONTENT_PATTERN" "$TMPFILE" | head -n 3
+    if grep -a -E -i -- "$SENSITIVE_CONTENT_PATTERN" "$TMPDIR_CHECK/filtered" >/dev/null; then
+        printf '[secret-check] blocked by content pattern in: %q\n' "$path"
         violations=1
+    elif [ "$?" -ne 1 ]; then
+        echo "[secret-check] failed to scan staged content." >&2
+        exit 1
     fi
-done <<< "$STAGED_FILES"
+done < "$TMPDIR_CHECK/index"
 
 if [ "$violations" -ne 0 ]; then
     echo ""
