@@ -11,9 +11,19 @@ Use shell scripts by platform:
 
 設定だけを導入する場合は、macOS で `./install.sh --no-packages`、Windows で `pwsh -File .\install.ps1 -NoPackages` を実行します。既存ファイルはそのまま使い、アンインストール時はこのクローンを指すファイルリンクを解除します。初期コピー、認証情報、個別設定、親ディレクトリはアンインストール後も利用できます。
 
+設定の保存先を上書きする環境変数には絶対パスを指定し、導入と削除を同じ指定で実行します。次のアプリでは専用の指定を優先します。
+
+| アプリ | 保存先の優先順 |
+| --- | --- |
+| mise | `MISE_GLOBAL_CONFIG_FILE` → `MISE_CONFIG_DIR/config.toml` → `XDG_CONFIG_HOME/mise/config.toml` |
+| Sheldon | `SHELDON_CONFIG_FILE` → `SHELDON_CONFIG_DIR/plugins.toml` → `XDG_CONFIG_HOME/sheldon/plugins.toml` |
+| Starship | `STARSHIP_CONFIG` → `XDG_CONFIG_HOME/starship.toml` |
+
+`XDG_CONFIG_HOME` の既定値は `~/.config` です。mise と Sheldon の設定、および distill の設定と学習用辞書は共有の初期値から端末ごとにコピーします。初回導入後は、必要な変更を端末側のファイルに反映してください。PowerShell と Zsh は、各端末にインストールされた mise をそれぞれのシェル向けに有効化します。
+
 Package manager by platform:
 
-- macOS: Homebrew (`Brewfile`)
+- macOS: Homebrew 4.5 以降 (`Brewfile`)
 - Windows: Scoop (`Scoopfile`)
 
 ## Windows prerequisites
@@ -47,6 +57,8 @@ pwsh -File .\install.ps1
 ## 旧インストールからの移行
 
 旧版で作られたディレクトリリンクを検出すると、配下のファイルをスキップします。移行する場合はアプリを閉じ、`~/.codex`、`~/.config`、`~/.ssh`、`~/.copilot`、`~/.zsh` のうち、クローンを指すリンクを確認します。リンク先に保存されたローカルファイルをリポジトリの外にバックアップしてから、リンクを別名に退避し、実ディレクトリを作成してください。そこへ必要な認証情報、SSH 鍵、`known_hosts`、アプリ設定を戻します。`~/.gitconfig` も旧版のリンクなら退避してからインストーラーを再実行します。既存の設定ファイルには必要な共有設定を手動で反映します。
+
+旧版で mise の `config.toml`、Sheldon の `plugins.toml`、distill の `dsl/global.json` をファイル単位でリンクした端末では、インストーラーが既存リンクを報告します。端末独自の変更をバックアップし、ホーム側の古いリンクを別名に退避してから再実行すると、通常のファイルとして初期化されます。
 
 ## Codex settings
 

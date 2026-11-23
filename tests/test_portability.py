@@ -1,4 +1,5 @@
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -6,6 +7,8 @@ import sys
 import tempfile
 import tomllib
 from pathlib import Path
+
+import pytest
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -176,3 +179,72 @@ def test_cross_platform_script_contract() -> None:
 
     for script in (read("uninstall.sh"), read("uninstall.ps1")):
         assert "--remove-section filter.codex-config" in script
+
+
+@pytest.mark.parametrize("shell", ["bash", "pwsh"])
+def test_app_config_destinations(shell: str, tmp_path: Path) -> None:
+    executable = shutil.which(shell)
+    if executable is None:
+        pytest.skip(f"{shell} is not installed")
+
+    config = tmp_path / "xdg config"
+    env = os.environ.copy()
+    for name in (
+        "MISE_GLOBAL_CONFIG_FILE",
+        "MISE_CONFIG_DIR",
+        "SHELDON_CONFIG_FILE",
+        "SHELDON_CONFIG_DIR",
+        "STARSHIP_CONFIG",
+    ):
+        env.pop(name, None)
+    env["XDG_CONFIG_HOME"] = str(config)
+
+    if shell == "bash":
+        args = [
+            executable, "--noprofile", "--norc", "-c",
+            'source ./install_targets.sh; while read -r mode item; do '
+            'printf "%s\\t%s\\t%s\\n" "$mode" "$item" "$(dotfile_destination "$item")"; '
+            'done < install_targets.txt',
+        ]
+    else:
+        args = [
+            executable, "-NoProfile", "-Command",
+            r'''
+. ./install_targets.ps1
+Get-DotfileTargets | ForEach-Object {
+    $Item = [IO.Path]::GetRelativePath($PWD.Path, $_.Source).Replace('\', '/')
+    "{0}`t{1}`t{2}" -f $_.Mode, $Item, $_.Target
+}
+''',
+        ]
+
+    def destinations() -> dict[str, tuple[str, Path]]:
+        result = subprocess.check_output(args, cwd=ROOT, env=env, encoding="utf-8")
+        return {
+            item: (mode, Path(target))
+            for mode, item, target in (line.split("\t") for line in result.splitlines())
+        }
+
+    mise = ".config/mise/config.toml"
+    sheldon = ".config/sheldon/plugins.toml"
+    starship = ".config/starship.toml"
+    dsl = ".config/distill/dsl/global.json"
+    targets = destinations()
+    assert targets[mise] == ("copy", config / "mise/config.toml")
+    assert targets[sheldon] == ("copy", config / "sheldon/plugins.toml")
+    assert targets[starship] == ("link", config / "starship.toml")
+    assert targets[dsl] == ("copy", config / "distill/dsl/global.json")
+
+    env["MISE_CONFIG_DIR"] = str(tmp_path / "mise settings")
+    env["SHELDON_CONFIG_DIR"] = str(tmp_path / "sheldon settings")
+    targets = destinations()
+    assert targets[mise] == ("copy", tmp_path / "mise settings/config.toml")
+    assert targets[sheldon] == ("copy", tmp_path / "sheldon settings/plugins.toml")
+
+    env["MISE_GLOBAL_CONFIG_FILE"] = str(tmp_path / "override/mise.toml")
+    env["SHELDON_CONFIG_FILE"] = str(tmp_path / "override/sheldon.toml")
+    env["STARSHIP_CONFIG"] = str(tmp_path / "override/starship.toml")
+    targets = destinations()
+    assert targets[mise] == ("copy", tmp_path / "override/mise.toml")
+    assert targets[sheldon] == ("copy", tmp_path / "override/sheldon.toml")
+    assert targets[starship] == ("link", tmp_path / "override/starship.toml")

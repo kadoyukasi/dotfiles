@@ -2,10 +2,24 @@
 # Mirrors zsh-syntax-highlighting + zsh-autosuggestions + zsh-history-substring-search
 Import-Module PSReadLine -ErrorAction SilentlyContinue
 
-# uv tools (serena, etc.)
+# uv tools can use UV_TOOL_BIN_DIR or XDG paths.
 $UvToolsBin = Join-Path $HOME ".local/bin"
-if (Test-Path $UvToolsBin) {
+if (Get-Command uv -ErrorAction SilentlyContinue) {
+    $ResolvedUvBin = & uv tool dir --bin
+    if ($LASTEXITCODE -eq 0 -and $ResolvedUvBin) {
+        $UvToolsBin = $ResolvedUvBin
+    }
+}
+if ((Test-Path -LiteralPath $UvToolsBin -PathType Container) -and
+    ($env:PATH -split [IO.Path]::PathSeparator) -notcontains $UvToolsBin) {
     $env:PATH = "$UvToolsBin$([IO.Path]::PathSeparator)$env:PATH"
+}
+
+if (Get-Command mise -ErrorAction SilentlyContinue) {
+    $MiseActivation = & mise activate pwsh | Out-String
+    if ($LASTEXITCODE -eq 0 -and $MiseActivation.Trim()) {
+        Invoke-Expression $MiseActivation
+    }
 }
 
 Set-PSReadLineOption -EditMode Emacs

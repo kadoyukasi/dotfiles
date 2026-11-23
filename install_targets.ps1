@@ -5,12 +5,29 @@ function Get-DotfileTargets {
         elseif ($env:XDG_CONFIG_HOME) { Join-Path $ConfigDir "gh" }
         elseif ($env:APPDATA) { Join-Path $env:APPDATA "GitHub CLI" }
         else { Join-Path $ConfigDir "gh" }
+    $MiseDir = if ($env:MISE_CONFIG_DIR) { $env:MISE_CONFIG_DIR } else { Join-Path $ConfigDir "mise" }
+    $SheldonDir = if ($env:SHELDON_CONFIG_DIR) { $env:SHELDON_CONFIG_DIR } else { Join-Path $ConfigDir "sheldon" }
 
     foreach ($Line in Get-Content -LiteralPath (Join-Path $PSScriptRoot "install_targets.txt")) {
         $Mode, $Item = $Line -split " ", 2
         $Destination = switch -Wildcard ($Item) {
             ".codex/*"     { Join-Path $CodexDir $Item.Substring(7); break }
             ".config/gh/*" { Join-Path $GhDir $Item.Substring(11); break }
+            ".config/mise/config.toml" {
+                if ($env:MISE_GLOBAL_CONFIG_FILE) { $env:MISE_GLOBAL_CONFIG_FILE }
+                else { Join-Path $MiseDir "config.toml" }
+                break
+            }
+            ".config/sheldon/plugins.toml" {
+                if ($env:SHELDON_CONFIG_FILE) { $env:SHELDON_CONFIG_FILE }
+                else { Join-Path $SheldonDir "plugins.toml" }
+                break
+            }
+            ".config/starship.toml" {
+                if ($env:STARSHIP_CONFIG) { $env:STARSHIP_CONFIG }
+                else { Join-Path $ConfigDir "starship.toml" }
+                break
+            }
             ".config/*"    { Join-Path $ConfigDir $Item.Substring(8); break }
             default        { Join-Path $HOME $Item }
         }

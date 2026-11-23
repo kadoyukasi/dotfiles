@@ -1,6 +1,3 @@
-link .config/distill/dsl/global.json
-link .config/mise/config.toml
-link .config/sheldon/plugins.toml
 link .config/starship.toml
 link .config/zsh-abbr/user-abbreviations
 link .codex/AGENTS.md
@@ -22,4 +19,7 @@ link .zshrc
 copy .gitconfig
 copy .codex/config.toml
 copy .config/distill/config.json
+copy .config/distill/dsl/global.json
 copy .config/gh/config.yml
+copy .config/mise/config.toml
+copy .config/sheldon/plugins.toml

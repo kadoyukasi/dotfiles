@@ -31,7 +31,12 @@ function Install-Dotfile {
     if (Test-LinkedParent $Target) { return }
     $ExistingItem = Get-Item -LiteralPath $Target -Force -ErrorAction SilentlyContinue
     if ($null -ne $ExistingItem) {
-        Write-Host "File $Target already exists in home directory. Skipping."
+        if ($Mode -eq "copy" -and $ExistingItem.LinkType -eq "SymbolicLink") {
+            Write-Warning "Existing symlink kept at $Target. See the README to migrate to a local copy."
+        }
+        else {
+            Write-Host "File $Target already exists. Skipping."
+        }
         return
     }
 
@@ -61,15 +66,16 @@ function Install-GlobalHook {
 
     $GlobalPath = git config --global --includes --get core.hooksPath
     $LocalPath = @(git config --file $GitLocalConfig --get-all core.hooksPath)
-    if (($GlobalPath -and $GlobalPath -ne $HooksPath) -or
-        ($LocalPath.Count -gt 0 -and ($LocalPath.Count -ne 1 -or $LocalPath[0] -ne $HooksPath))) {
+    if (($GlobalPath -and $GlobalPath.Replace('\', '/').TrimEnd('/') -ne $HooksPath) -or
+        ($LocalPath.Count -gt 0 -and ($LocalPath.Count -ne 1 -or $LocalPath[0].Replace('\', '/').TrimEnd('/') -ne $HooksPath))) {
         Write-Warning "Leaving existing core.hooksPath unchanged."
         return
     }
 
     git config --file $GitLocalConfig core.hooksPath $HooksPath
     if ($LASTEXITCODE -ne 0) { throw "Failed to set core.hooksPath in $GitLocalConfig." }
-    if ((git config --global --includes --get core.hooksPath) -eq $HooksPath) {
+    $EffectivePath = git config --global --includes --get core.hooksPath
+    if ($EffectivePath -and $EffectivePath.Replace('\', '/').TrimEnd('/') -eq $HooksPath) {
         Write-Host "Global Git hooks enabled via $GitLocalConfig."
     }
     else {

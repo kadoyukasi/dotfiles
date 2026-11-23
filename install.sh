@@ -41,25 +41,37 @@ case "$OS_TYPE" in
 esac
 
 install_packages() {
+    local brew_command
     if command -v brew >/dev/null 2>&1; then
-        brew bundle --file="$DOTFILES_DIR/Brewfile"
-        echo "Homebrew packages have been installed."
+        brew_command=brew
+    elif [ "$(uname -m)" = arm64 ] && [ -x /opt/homebrew/bin/brew ]; then
+        brew_command=/opt/homebrew/bin/brew
+    elif [ -x /usr/local/bin/brew ]; then
+        brew_command=/usr/local/bin/brew
     else
         echo "Homebrew is not installed. Skipping package installation."
+        return
     fi
+    "$brew_command" bundle --file="$DOTFILES_DIR/Brewfile"
+    echo "Homebrew packages have been installed."
 }
 
 install_file() {
-    local mode="$1" source="$2" target="$3"
+    local mode="$1" source="$2" target="$3" parent
     if has_linked_parent "$target"; then
         return
     fi
     if [ -e "$target" ] || [ -L "$target" ]; then
-        echo "Already exists. Skipping $target."
+        if [ "$mode" = copy ] && [ -L "$target" ]; then
+            echo "Existing symlink kept at $target. See the README to migrate to a local copy." >&2
+        else
+            echo "Already exists. Skipping $target."
+        fi
         return
     fi
 
-    (umask 077; mkdir -p "${target%/*}")
+    parent="$(dirname "$target")"
+    (umask 077; mkdir -p "$parent")
     if [ "$mode" = copy ]; then
         (umask 077; set -o noclobber; cat "$source" > "$target")
         echo "Initialized $target."

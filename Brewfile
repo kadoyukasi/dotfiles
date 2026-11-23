@@ -1,4 +1,3 @@
-tap "homebrew/bundle"
 brew "apktool"
 brew "certbot"
 brew "coreutils"
