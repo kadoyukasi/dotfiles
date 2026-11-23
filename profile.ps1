@@ -63,7 +63,16 @@ if (Get-Command zoxide -ErrorAction SilentlyContinue) {
 if (-not $env:STARSHIP_CONFIG) {
     $ConfigDir = if ($env:XDG_CONFIG_HOME) { $env:XDG_CONFIG_HOME } else { Join-Path $HOME ".config" }
     $CandidateConfig = Join-Path $ConfigDir "starship.toml"
-    if (Test-Path -LiteralPath $CandidateConfig) {
+    if (-not (Test-Path -LiteralPath $CandidateConfig -PathType Leaf)) {
+        # The PowerShell profile may be installed even when the Starship link is absent.
+        $ProfileFile = Get-Item -LiteralPath $PSCommandPath
+        $ProfileSource = $ProfileFile.FullName
+        if ($ProfileFile.LinkType -eq "SymbolicLink" -and $ProfileFile.Target) {
+            $ProfileSource = [IO.Path]::GetFullPath([string]$ProfileFile.Target, $ProfileFile.DirectoryName)
+        }
+        $CandidateConfig = Join-Path (Split-Path -Parent $ProfileSource) ".config/starship.toml"
+    }
+    if (Test-Path -LiteralPath $CandidateConfig -PathType Leaf) {
         $env:STARSHIP_CONFIG = $CandidateConfig
     }
 }
