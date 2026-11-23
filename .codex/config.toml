@@ -1,11 +1,15 @@
-personality = "pragmatic"
-model = "gpt-5.6-sol"
-model_reasoning_effort = "low"
+model = "gpt-6.2-sol"
+model_reasoning_effort = "medium"
 model_verbosity = "low"
+personality = "pragmatic"
 
+approval_policy = "on-request"
+approvals_reviewer = "auto_review"
+sandbox_mode = "workspace-write"
+service_tier = "default"
 
-[plugins."github@openai-curated"]
-enabled = false
+[windows]
+sandbox = "unelevated"
 
 [plugins."documents@openai-primary-runtime"]
 enabled = false
@@ -16,10 +20,25 @@ enabled = false
 [plugins."presentations@openai-primary-runtime"]
 enabled = false
 
-[plugins."browser@openai-bundled"]
+[plugins."github@openai-curated"]
 enabled = false
 
+[plugins."hugging-face@openai-curated"]
+enabled = true
+
+[plugins."test-android-apps@openai-curated"]
+enabled = true
+
+[plugins."expo@openai-curated"]
+enabled = true
+
+[plugins."canva@openai-curated"]
+enabled = true
+
 [plugins."context-mode@context-mode"]
+enabled = true
+
+[plugins."pdf@openai-primary-runtime"]
 enabled = true
 
 [plugins."sites@openai-bundled"]
@@ -28,7 +47,22 @@ enabled = true
 [plugins."chrome@openai-bundled"]
 enabled = true
 
+[plugins."template-creator@openai-primary-runtime"]
+enabled = true
+
 [plugins."visualize@openai-bundled"]
+enabled = true
+
+[plugins."browser@openai-bundled"]
+enabled = false
+
+[plugins."codex-app-tools@openai-bundled"]
+enabled = true
+
+[plugins."computer-use@openai-bundled"]
+enabled = true
+
+[plugins."unified-computer-use@openai-bundled"]
 enabled = true
 
 [mcp_servers.serena]
@@ -38,86 +72,23 @@ command = "uvx"
 args = ["-p", "3.13", "--from", "serena-agent", "serena", "start-mcp-server", "--project-from-cwd", "--context=codex"]
 
 [features]
-memories = true
-plugin_hooks = true
 hooks = true
-js_repl = false
+memories = true
+goals = true
+workspace_dependencies = true
 
 [desktop]
+ambient-suggestions-enabled = true
+conversationDetailMode = "STEPS_COMMANDS"
+browser-annotation-screenshots-mode = "necessary"
+git-show-sidebar-pr-icons = true
 git-commit-instructions = """
----
-name: conventional-commit
-description: 'Prompt and workflow for generating conventional commit messages using a structured XML format. Guides users to create standardized, descriptive commit messages in line with the Conventional Commits specification, including instructions, examples, and validation.'
----
-
-### Instructions
-
-```xml
-\t<description>This file contains a prompt template for generating conventional commit messages. It provides instructions, examples, and formatting guidelines to help users write standardized, descriptive commit messages in accordance with the Conventional Commits specification.</description>
-```
-
-### Workflow
-
-**Follow these steps:**
-
-1. Run `git status` to review changed files.
-2. Run `git diff` or `git diff --cached` to inspect changes.
-3. Stage your changes with `git add <file>`.
-4. Construct your commit message using the following XML structure.
-5. After generating your commit message, Copilot will automatically run the following command in your integrated terminal (no confirmation needed):
-
-```bash
-git commit -m "type(scope): description"
-```
-
-6. Just execute this prompt and Copilot will handle the commit for you in the terminal.
-
-### Commit Message Structure
-
-```xml
-<commit-message>
-\t<type>feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert</type>
-\t<scope>()</scope>
-\t<description>A short, imperative summary of the change</description>
-\t<body>(optional: more detailed explanation)</body>
-\t<footer>(optional: e.g. BREAKING CHANGE: details, or issue references)</footer>
-</commit-message>
-```
-
-### Examples
-
-```xml
-<examples>
-\t<example>feat(parser): add ability to parse arrays</example>
-\t<example>fix(ui): correct button alignment</example>
-\t<example>docs: update README with usage instructions</example>
-\t<example>refactor: improve performance of data processing</example>
-\t<example>chore: update dependencies</example>
-\t<example>feat!: send email on registration (BREAKING CHANGE: email service required)</example>
-</examples>
-```
-
-### Validation
-
-```xml
-<validation>
-\t<type>Must be one of the allowed types. See <reference>https://www.conventionalcommits.org/en/v1.0.0/#specification</reference></type>
-\t<scope>Optional, but recommended for clarity.</scope>
-\t<description>Required. Use the imperative mood (e.g., "add", not "added").</description>
-\t<body>Optional. Use for additional context.</body>
-\t<footer>Use for breaking changes or issue references.</footer>
-</validation>
-```
-
-### Final Step
-
-```xml
-<final-step>
-\t<cmd>git commit -m "type(scope): description"</cmd>
-\t<note>Replace with your constructed message. Include body and footer if needed.</note>
-</final-step>
-```"""
+When asked to commit, inspect git status and the diff, then stage only the intended changes.
+Use Conventional Commits with a short imperative subject: type(scope): summary.
+The scope is optional. Add a body or footer when needed, including BREAKING CHANGE for compatibility breaks.
+"""
+show-context-window-usage = true
 followUpQueueMode = "queue"
-[shell_environment_policy.set]
-BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab"
-NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "461c4ba94b821ec805da79c8e8138fe510b1b3358609fc93da47387a2cf3fbf3,6d25aa7656feac858f3a3bdaea5bcbab0dbfd426c9de8e6931ce90c399ee8e4f"
+
+[memories]
+disable_on_external_context = true

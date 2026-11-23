@@ -50,33 +50,51 @@ pwsh -File .\install.ps1
 
 ## Codex settings
 
-インストーラーは `$CODEX_HOME`（未指定時は `~/.codex`）に共有の指示、ルール、スキル、プロファイルをファイル単位でリンクし、`config.toml` がない場合だけ初期コピーを作ります。共有側の更新は端末の `config.toml` に必要な項目を反映してください。プロジェクトの信頼設定、フックの承認、デスクトップのランタイムやプラグインのパスは各端末で設定します。
+インストーラーは `$CODEX_HOME`（未指定時は `~/.codex`）に共有の指示、ルール、スキル、プロファイルをファイル単位でリンクし、`config.toml` がない場合だけ初期コピーを作ります。共有側の更新は端末の `config.toml` に必要な項目を反映してください。プロジェクトの信頼設定、フックの承認、デスクトップのランタイムやプラグインのパス、遠隔操作の設定は各端末で管理します。
 
-The default Codex configuration favors lower token use:
+The managed Codex configuration balances implementation quality with token use:
 
-- `gpt-5.6-sol` with `model_reasoning_effort = "low"`
-- `model_verbosity = "low"`
+- `gpt-6.2-sol` with `model_reasoning_effort = "medium"` for implementation and debugging
+- `service_tier = "default"` for standard speed and `model_verbosity = "low"` for models that apply the verbosity override
 - 大量入力には `context-mode` を有効化。新しい端末ではプラグインを端末側にもインストールしてください。
-- optional plugins and Serena disabled until a matching CLI profile is selected
+- 承認は `on-request` と `auto_review`、サンドボックスは `workspace-write` を初期値にします。Windows では `[windows].sandbox = "unelevated"` も適用します。
 
-Codex 0.134 and later loads profiles from separate files in `~/.codex/`. The managed profiles are:
+Codex 0.134 and later loads CLI profiles from separate files in `~/.codex/`. The managed profiles layer the following integration settings over the base configuration:
 
 | Profile | Enables |
 | --- | --- |
-| `code` | GitHub plugin and Serena |
+| `code` | GitHub プラグインと Serena |
 | `artifacts` | documents, spreadsheets, and presentations plugins |
 | `browser` | in-app browser plugin |
-| `full` | all optional plugins above and Serena |
+| `full` | 上記すべて |
 
 For example, run `codex --profile code` for repository work or `codex --profile full` when all integrations are needed. Profiles are CLI configuration layers; the desktop app continues to use the base configuration unless integrations are enabled in its settings.
 
+`code` と `full` プロファイルは、各端末の `PATH` にある `uvx` から Python 3.13 で Serena を起動します。パッケージ一覧には `uv` が含まれます。初回は Python や依存関係を取得する場合があり、MCP の起動タイムアウトは60秒です。接続状態は Codex の `/mcp` で確認できます。 プロファイルが有効化するプラグインは各端末でインストールします。
+
 Global communication and safety defaults live in `.codex/AGENTS.md`. Repository-specific invariants live in the root `AGENTS.md`, avoiding repeated or conflicting instructions.
 
-`code` と `full` プロファイルは、各端末の `PATH` にある `uvx` から Python 3.13 で Serena を起動します。パッケージ一覧には `uv` が含まれます。初回は Python や依存関係を取得する場合があり、MCP の起動タイムアウトは60秒です。接続状態は Codex の `/mcp` で確認できます。
+The user-level defaults are loaded from `~/.codex/config.toml` and `~/.codex/AGENTS.md` (or `CODEX_HOME` when set). Trusted project configuration can override the user defaults, and repository guidance can specify the product and verification steps.
+
+特定プロジェクトのルート検出に追加マーカーが必要な場合は、端末側の `config.toml` の `project_root_markers` に設定します。プロジェクト固有のモデルやエージェントは、そのプロジェクトの `.codex/` で管理します。
+
+### 精度を保つトークン節約
+
+- 検索範囲を絞り、未変更の資料・取得済み結果を再利用する。
+- 大量出力はcontext-modeで処理し、件数・該当箇所・終了コードを返す。失敗・不確実性があれば原文と周辺を確認する。
+- 成功済み検証は変更・失敗・未解決の懸念がある場合に再実行する。必要な検証を省略しない。
+- 実装・原因調査は既定の `medium` を使う。軽い整形や機械的な変更は `low`、難しい設計や再現しにくい不具合は必要に応じて `high` にする。CLI では `codex -c 'model_reasoning_effort="low"'` のように指定できる。デスクトップではチャットの推論量を選ぶ。
+- 案件固有の指定がなければ、一般ユーザー向けの PC ソフトウェア一製品を想定し、通常の起動・操作経路で変更を検証する。
+- デスクトップのコミット指示は Conventional Commits の書式と対象差分の確認に絞る。
+
+設定項目は[OpenAI公式設定リファレンス](https://learn.chatgpt.com/docs/config-file/config-reference)を参照。削減率と精度の維持は未計測。同種タスクの使用量と受入条件の達成を比較して評価する。
+
+設定と共通指示は新しいチャットで確認する。既存の端末設定に反映する際は、モデル、推論量、速度、コミット指示の対象項目と、`AGENTS.md`、`skills/distill/SKILL.md` の差分を確認する。
 
 インストーラーは、このクローンの `.codex/config.toml` 用にリポジトリローカルの Git clean フィルターも登録します。フィルターは、プロジェクトの信頼設定、フックの承認状態、マーケットプレイス情報と一部の端末固有パスをステージ時に除きます。pre-commit フックでもステージ済みの設定を検査します。アンインストール時に、このフィルターの登録を解除します。
 
 This repository includes project-scoped Codex hooks in `.codex/hooks.json`. The dispatcher runs them only inside the dotfiles checkout.
+
 
 The hooks are repo-local and currently do four things:
 
@@ -89,13 +107,13 @@ They complement, not replace, the git pre-commit secret scan in `.githooks/pre-c
 
 ### Context-mode workflow
 
-This repository uses `context-mode` as the first compression layer for large inputs. `distill` is reserved for an explicitly requested compressed result or a final summary that materially benefits from terse S/C/D/R/O/P formatting.
+Use `context-mode` to filter large inputs. Use the `distill` skill when the user explicitly requests a compressed result or S/C/D/R/O/P formatting.
 
 Preferred routing:
 
-- large logs, test output, snapshots, CSV, or long command output: `ctx_execute_file` or `ctx_execute`
+- large logs, test output, snapshots, or CSV: `ctx_execute` with a command or file
 - large references or docs you may query again: `ctx_index` then `ctx_search`
-- multiple related shell/data gathering steps: `ctx_batch_execute`
+- multiple related commands: `ctx_batch`
 - explicitly requested compressed result: `distill` style output
 
 Do not pipe tests, builds, lint, diffs, security checks, or infrastructure plans through `distill` for PASS/FAIL or safety decisions. Keep their original exit codes and required raw evidence. In short: keep raw bytes out of the conversation with `ctx_*`, and avoid a second summarization step unless it improves the final user-facing result.
